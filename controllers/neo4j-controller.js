@@ -521,6 +521,8 @@ function findShortestHyperspacePath(JumpData, cb) {
 
 function findManyHyperspacePaths(JumpData, cb) {
 
+  console.log("JumpData: ", JumpData);
+
   // const query = cypher()
   //   .match('(n1:Hyperspace_Node)')
   //   .where('n1.system = {start}', {start: start})

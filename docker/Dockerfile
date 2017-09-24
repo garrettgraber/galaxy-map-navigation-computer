@@ -28,6 +28,9 @@ ADD ./package.json /root/package.json
 # install npm modules
 RUN cd /root; npm install --save
 
+# install missing dependencies
+Run npm install -g npm-install-missing; npm-install-missing
+
 # install nodemon globally
 RUN npm install nodemon -g
 
