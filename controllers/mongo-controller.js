@@ -7,9 +7,32 @@ const HyperSpaceLane = require('../data-classes/classes.js').HyperSpaceLane;
 const Alphabets = require('../data-classes/alphabets.js');
 const Schema = mongoose.Schema;
 
+
+
+console.log("DatabaseLinks: ", DatabaseLinks);
+console.log("NODE_ENV: ", process.env.NODE_ENV);
+const isDeveloping = process.env.NODE_ENV !== 'production';
+const isProduction = process.env.NODE_ENV === 'production';
+console.log("isProduction: ", isProduction);
+
+
+if(DDatabaseLinks.hasOwnProperty('mongo') && isDeveloping) {
+  	var MONGO = 'mongodb://' + DatabaseLinks.mongo.hostname + ':' + DatabaseLinks.mongo.port;
+} else if (isProduction) {
+	var MONGO = 'mongodb://172.31.65.109:27017/test';
+} else {
+	// var TILES = 'http://localhost:8110/tiles-leaflet-new/{z}/{x}/{y}.png';
+	console.log("mongo failure!!!!");
+}
+
+
+console.log("MONGO: ", MONGO);
+
+
+
 function connectToDatabase(cb) {
 
-	mongoose.connect('mongodb://' + DatabaseLinks.mongo.hostname + ':' + DatabaseLinks.mongo.port);
+	mongoose.connect(MONGO);
 
 	const db = mongoose.connection;
 	db.on('error', function(error) {
