@@ -16,7 +16,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 console.log("isProduction: ", isProduction);
 
 
-if(DDatabaseLinks.hasOwnProperty('mongo') && isDeveloping) {
+if(DatabaseLinks.hasOwnProperty('mongo') && isDeveloping) {
   	var MONGO = 'mongodb://' + DatabaseLinks.mongo.hostname + ':' + DatabaseLinks.mongo.port;
 } else if (isProduction) {
 	var MONGO = 'mongodb://172.31.65.109:27017/test';
