@@ -56,7 +56,7 @@ function insertHyperspaceNodeIntoGraph(hyperspaceNode, cb) {
         console.log("node insertion error: ", err);
         cb(err, null);
       } else {
-        console.log("node instered: ", node._id);
+        console.log("node inserted: ", node._id);
         db.addLabelsToNode(node._id, 'Hyperspace_Node', function (errorAdd, resultAdd) {
             if(errorAdd) {
               console.log("Error adding labels: ", errorAdd);
@@ -429,14 +429,14 @@ function graphDatabaseQuery(query, cb) {
 
           for(let i=0; i < hyperspaceRoutes.length; i++) {
 
-            let route = hyperspaceRoutes[i];
+            let routes = hyperspaceRoutes[i];
             let distance = hyperspaceRoutesLength[i];
             let nodes = hyperspaceRoutesNodes[i];
-            // console.log("route: ", route);
+            // console.log("routes: ", routes);
             // console.log('nodes: ', nodes);
             // console.log("distance: ", distance);
 
-            const StarPath = new HyperSpacePath(start, end, distance, route, nodes);
+            const StarPath = new HyperSpacePath(start, end, distance, routes, nodes, '', routes.length);
             StarPathCollection.paths.push(StarPath);
           }
 

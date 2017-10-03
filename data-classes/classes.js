@@ -163,13 +163,14 @@ class HyperSpaceNode {
 module.exports.HyperSpaceNode = HyperSpaceNode;
 
 class HyperSpacePath {
-	constructor(start, end, length, jumps, nodes, hashValue = '') {
+	constructor(start, end, length, jumps, nodes, hashValue = '', numberOfJumps = null) {
 		this.start = start;
 		this.end = end;
 		this.length = length;
 		this.jumps = jumps;
 		this.nodes = nodes;
 		this.hashValue = hashValue;
+		this.numberOfJumps = numberOfJumps;
 	}
 
 	createArrayOfHyperspaceLanes(totalLanesInCollection) {
