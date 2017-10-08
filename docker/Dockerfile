@@ -2,6 +2,7 @@
 FROM node:8-slim
 
 # Update packages
+
 RUN apt-get update -y --fix-missing;
 RUN apt-get upgrade -y;
 

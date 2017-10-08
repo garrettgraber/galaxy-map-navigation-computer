@@ -20,6 +20,6 @@ else
 fi
 echo "Building map-express-server..."
 docker build -t navi-computer-node . 
-# docker build --no-cache -t planet-data-loader . 
+# docker build --no-cache -t navi-computer-node . 
 
 echo "Build Done!"
