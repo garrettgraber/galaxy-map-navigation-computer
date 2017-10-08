@@ -17,6 +17,8 @@ const HyperSpacePathCollection = require('../data-classes/classes.js').HyperSpac
 const DatabaseLinks = require('docker-links').parseLinks(process.env);
 
 
+console.log("DatabaseLinks in NeoController: ", DatabaseLinks);
+
 let MongoController;
 let neo4jHostname = "";
 let hyperLanesCount = 0;
@@ -29,10 +31,10 @@ console.log("Neo Controller isProduction: ", isProduction);
 if(DatabaseLinks.hasOwnProperty('mongo')) {
 	console.log("Using mongo...");
 	MongoController = require('./mongo-controller.js');
-} else if(DatabaseLinks.hasOwnProperty('graph')) {
+}
+
+if(DatabaseLinks.hasOwnProperty('graph')) {
 	neo4jHostname = DatabaseLinks.graph.hostname;
-} else {
-  console.log("No database selected!");
 }
 
 
