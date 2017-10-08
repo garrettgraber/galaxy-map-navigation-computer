@@ -21,6 +21,11 @@ let MongoController;
 let neo4jHostname = "";
 let hyperLanesCount = 0;
 
+console.log("NODE_ENV: ", process.env.NODE_ENV);
+const isDeveloping = process.env.NODE_ENV !== 'production';
+const isProduction = process.env.NODE_ENV === 'production';
+console.log("Neo Controller isProduction: ", isProduction);
+
 if(DatabaseLinks.hasOwnProperty('mongo')) {
 	console.log("Using mongo...");
 	MongoController = require('./mongo-controller.js');

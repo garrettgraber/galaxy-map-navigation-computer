@@ -19,7 +19,7 @@ console.log("isProduction: ", isProduction);
 if(DatabaseLinks.hasOwnProperty('mongo') && isDeveloping) {
   	var MONGO = 'mongodb://' + DatabaseLinks.mongo.hostname + ':' + DatabaseLinks.mongo.port;
 } else if (isProduction) {
-	var MONGO = 'mongodb://172.31.65.109:27017/test';
+	var MONGO = 'mongodb://172.31.40.234:27017/test';
 } else {
 	// var TILES = 'http://localhost:8110/tiles-leaflet-new/{z}/{x}/{y}.png';
 	console.log("mongo failure!!!!");
