@@ -28,7 +28,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 console.log("Neo Controller isProduction: ", isProduction);
 
 // db = new neo4j('http://username:password@domain:port');
-let graphDatabaseHostname = '';
+let graphDatabaseHostname = DatabaseLinks.graph.hostname;
 
 if(DatabaseLinks.hasOwnProperty('graph') && isDeveloping) {
   neo4jHostname = DatabaseLinks.graph.hostname;
@@ -39,7 +39,7 @@ if(DatabaseLinks.hasOwnProperty('graph') && isDeveloping) {
 
 console.log("neo4jHostname: ", neo4jHostname);
 
-db = new neo4j("http://neo4j:neo4j@" + neo4jHostname + ":7474");
+db = new neo4j("http://neo4j:neo4j@" + graphDatabaseHostname + ":7474");
 
 console.log("db: ", db);
 
