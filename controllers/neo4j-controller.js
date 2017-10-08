@@ -16,10 +16,11 @@ const HyperSpaceNode = require('../data-classes/classes.js').HyperSpaceNode;
 const HyperSpacePathCollection = require('../data-classes/classes.js').HyperSpacePathCollection;
 const DatabaseLinks = require('docker-links').parseLinks(process.env);
 
+const MongoController = require('./mongo-controller.js');
+
 
 console.log("DatabaseLinks in NeoController: ", DatabaseLinks);
 
-let MongoController;
 let neo4jHostname = "";
 let hyperLanesCount = 0;
 
@@ -28,10 +29,10 @@ const isDeveloping = process.env.NODE_ENV !== 'production';
 const isProduction = process.env.NODE_ENV === 'production';
 console.log("Neo Controller isProduction: ", isProduction);
 
-if(DatabaseLinks.hasOwnProperty('mongo')) {
-	console.log("Using mongo...");
-	MongoController = require('./mongo-controller.js');
-}
+// if(DatabaseLinks.hasOwnProperty('mongo')) {
+// 	console.log("Using mongo...");
+// 	MongoController = require('./mongo-controller.js');
+// }
 
 if(DatabaseLinks.hasOwnProperty('graph')) {
 	neo4jHostname = DatabaseLinks.graph.hostname;
