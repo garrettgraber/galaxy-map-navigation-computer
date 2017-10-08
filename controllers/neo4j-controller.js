@@ -15,9 +15,7 @@ const HyperSpacePath = require('../data-classes/classes.js').HyperSpacePath;
 const HyperSpaceNode = require('../data-classes/classes.js').HyperSpaceNode;
 const HyperSpacePathCollection = require('../data-classes/classes.js').HyperSpacePathCollection;
 const DatabaseLinks = require('docker-links').parseLinks(process.env);
-
 const MongoController = require('./mongo-controller.js');
-
 
 console.log("DatabaseLinks in NeoController: ", DatabaseLinks);
 
@@ -29,24 +27,19 @@ const isDeveloping = process.env.NODE_ENV !== 'production';
 const isProduction = process.env.NODE_ENV === 'production';
 console.log("Neo Controller isProduction: ", isProduction);
 
-// if(DatabaseLinks.hasOwnProperty('mongo')) {
-// 	console.log("Using mongo...");
-// 	MongoController = require('./mongo-controller.js');
-// }
+// db = new neo4j('http://username:password@domain:port');
+let graphDatabaseHostname = '';
 
-if(DatabaseLinks.hasOwnProperty('graph')) {
-	neo4jHostname = DatabaseLinks.graph.hostname;
+if(DatabaseLinks.hasOwnProperty('graph') && isDeveloping) {
+  neo4jHostname = DatabaseLinks.graph.hostname;
 }
-
-
-const boltUrl = "bolt://" + neo4jHostname + ":7687";
-const botLocalUrl = "bolt://localhost:7474/";
+ else {
+  neo4jHostname = '0.0.0.0';
+}
 
 console.log("neo4jHostname: ", neo4jHostname);
 
-// db = new neo4j('http://username:password@domain:port');
-
-db = new neo4j("http://neo4j:neo4j@" + DatabaseLinks.graph.hostname + ":7474");
+db = new neo4j("http://neo4j:neo4j@" + neo4jHostname + ":7474");
 
 console.log("db: ", db);
 
