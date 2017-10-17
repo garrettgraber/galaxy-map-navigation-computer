@@ -7,7 +7,9 @@ const fs = require('fs'),
   parser = require("neo4j-parser"),
   uuidv1 = require('uuid/v1'),
   uuidv4 = require('uuid/v4'),
-  distance = require('euclidean-distance');
+  distance = require('euclidean-distance'),
+  perf = require('execution-time')();
+
 
 const Planet = require('../data-classes/classes.js').Planet;
 const HyperSpaceLane = require('../data-classes/classes.js').HyperSpaceLane;
@@ -308,6 +310,8 @@ function findLaneById(laneId, cb) {
 
 function graphDatabaseQuery(query, cb) {
 
+  perf.start();
+
   db.cypherQuery(query.compile(true), function(cypherError, cypherResult){
     
     if(cypherError) {
@@ -459,6 +463,9 @@ function graphDatabaseQuery(query, cb) {
             StarPathCollection.linkHyperspacePaths();
             console.log("sending StarPathCollection...");
 
+            const results = perf.stop();
+            console.log("Calculation Time: ", results.time);
+
             cb(error, StarPathCollection);
           } else {
             cb(error, {});
@@ -471,6 +478,9 @@ function graphDatabaseQuery(query, cb) {
 
 function findShortestHyperspacePath(JumpData, cb) {
 
+  const MaxNavigationJumps = 100;
+  const jumpDataMax = JumpData.maxJumps;
+
   const query = cypher()
     .match('(n1:Hyperspace_Node)')
     .where('n1.system = {start}', {start: JumpData.start})
@@ -478,7 +488,7 @@ function findShortestHyperspacePath(JumpData, cb) {
     .where('n2.system = {end}', {end: JumpData.end})
     // .match(pathsString(maxJumps))
     // .match('paths = ((n1:Hyperspace_Node)-[:HYPERSPACE_LANE*..{maxJumps}]-(n2:Hyperspace_Node))', {maxJumps: maxJumps})
-    .match('paths = allShortestPaths((n1:Hyperspace_Node)-[:HYPERSPACE_LANE*..{maxJumps}]-(n2:Hyperspace_Node))', {maxJumps: JumpData.maxJumps})
+    .match('paths = allShortestPaths((n1:Hyperspace_Node)-[:HYPERSPACE_LANE*..{maxJumps}]-(n2:Hyperspace_Node))', {maxJumps: MaxNavigationJumps})
     .with('REDUCE(distance = 0, rel in relationships(paths) | distance + rel.length) AS distance, paths')
 
     .return('paths, distance')

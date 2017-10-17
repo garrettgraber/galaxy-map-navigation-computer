@@ -100,7 +100,7 @@ app.post('/hyperspace-jump/calc-many', function(req, res) {
 	    	// console.log("laneSet size: ", laneSet.size);
 
 				// res.sendStatus(200);
-			res.json(result);
+				res.json(result);
 	    }
 	});
 	       
