@@ -464,7 +464,7 @@ function graphDatabaseQuery(query, cb) {
             console.log("sending StarPathCollection...");
 
             const results = perf.stop();
-            console.log("Calculation Time: ", results.time);
+            console.log("Calculation Time in seconds: ", (results.time) / 1000.0);
 
             cb(error, StarPathCollection);
           } else {
