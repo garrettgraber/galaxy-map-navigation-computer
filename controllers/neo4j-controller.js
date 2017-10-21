@@ -159,7 +159,7 @@ function buildHyperSpaceNodeGraph(cb) {
       console.log("error getting all hyperspace nodes: ", error);
     } else {
       // console.log("result: ", result);
-      geneateHyperSpaceNodeGraph(result, cb);
+      generateHyperSpaceNodeGraph(result, cb);
     }
   });
 };
@@ -197,13 +197,13 @@ function buildHyperSpaceLaneGraph(cb) {
     if(error) {
       console.log("error getting all hyperspace lanes: ", error);
     } else {
-      geneateHyperSpaceLaneRelationship(result, cb);
+      generateHyperSpaceLaneRelationship(result, cb);
       // console.log("result: ", result);
     }
   });
 };
 
-function geneateHyperSpaceNodeGraph(hyperSpaceNodes, cb) {
+function generateHyperSpaceNodeGraph(hyperSpaceNodes, cb) {
   async.eachLimit(hyperSpaceNodes, 5, insertHyperspaceNodeIntoGraph, function(err){
     console.log("async each done!");
     if(err) {
@@ -216,7 +216,7 @@ function geneateHyperSpaceNodeGraph(hyperSpaceNodes, cb) {
   });
 };
 
-function geneateHyperSpaceLaneRelationship(hyperSpaceLanes, cb) {
+function generateHyperSpaceLaneRelationship(hyperSpaceLanes, cb) {
   async.eachLimit(hyperSpaceLanes, 5, insertHyperspaceLaneIntoGraph, function(err){
     console.log("async each done!");
     if(err) {
