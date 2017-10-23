@@ -53,6 +53,8 @@ function insertHyperspaceNodeIntoGraph(hyperspaceNode, cb) {
       system: hyperspaceNode.system,
       lng: hyperspaceNode.lng,
       lat: hyperspaceNode.lat,
+      xGalacticLong: hyperspaceNode.xGalacticLong,
+      yGalacticLong: hyperspaceNode.yGalacticLong,
       hyperspaceLanes: hyperspaceNode.hyperspaceLanes
   }, function(err, node){
       if(err) {
@@ -421,7 +423,9 @@ function graphDatabaseQuery(query, cb) {
               Node.lng,
               Node.lat,
               Node.hyperspaceLanes,
-              Node._id
+              Node._id,
+              Node.xGalacticLong,
+              Node.yGalacticLong
             );
           });
 
