@@ -46,8 +46,6 @@ db = new neo4j("http://neo4j:neo4j@" + graphDatabaseHostname + ":7474");
 console.log("db: ", db);
 
 
-
-
 function insertHyperspaceNodeIntoGraph(hyperspaceNode, cb) {
   db.insertNode({
       system: hyperspaceNode.system,
@@ -180,7 +178,6 @@ function getFirstThirtyNodesFromGraph() {
 
 function getFirstThirtyLanesFromGraph() {
   for(let hyperspaceLane = 1; hyperspaceLane < 31; hyperspaceLane++) {
-
     db.readRelationship(hyperspaceLane, function(err, lane){
       if(err) {
         console.log("error reading lane: ", err);
@@ -195,7 +192,6 @@ function getFirstThirtyLanesFromGraph() {
 function buildHyperSpaceLaneGraph(cb) {
   console.log("buildHyperSpaceLaneGraph has fired!");
   MongoController.getAllHyperspaceLanes(function(error, result) {
-
     if(error) {
       console.log("error getting all hyperspace lanes: ", error);
     } else {
@@ -207,7 +203,6 @@ function buildHyperSpaceLaneGraph(cb) {
 
 function generateHyperSpaceNodeGraph(hyperSpaceNodes, cb) {
   async.eachLimit(hyperSpaceNodes, 5, insertHyperspaceNodeIntoGraph, function(err){
-    console.log("async each done!");
     if(err) {
       console.log("Error loading hyperspace node data: ", err);
       cb(err);
@@ -220,7 +215,6 @@ function generateHyperSpaceNodeGraph(hyperSpaceNodes, cb) {
 
 function generateHyperSpaceLaneRelationship(hyperSpaceLanes, cb) {
   async.eachLimit(hyperSpaceLanes, 5, insertHyperspaceLaneIntoGraph, function(err){
-    console.log("async each done!");
     if(err) {
       console.log("Error loading hyperspace lane data: ", err);
       cb(err);
@@ -269,8 +263,8 @@ function getPathData(pathResponseData) {
   const relationshipsIds = _.map(relationships, parseUriForIds);
   const nodeIds = _.map(nodes, parseUriForIds);
 
-  console.log("relationshipsIds: ", relationshipsIds);
-  console.log("nodeIds: ", nodeIds);
+  // console.log("relationshipsIds: ", relationshipsIds);
+  // console.log("nodeIds: ", nodeIds);
 };
 
 function getLaneAndNodeIds(pathResponseData) {
@@ -294,7 +288,6 @@ function findNodeById(nodeId, cb) {
 
     // console.log("hyperspace lane: ", relationship);
 
-    // Same properties for relationship object as with InsertRelationship
     cb(err, node);
   });
 };
@@ -305,7 +298,6 @@ function findLaneById(laneId, cb) {
 
     // console.log("hyperspace lane: ", relationship);
 
-    // Same properties for relationship object as with InsertRelationship
     cb(err, relationship);
   });
 }
@@ -353,7 +345,6 @@ function graphDatabaseQuery(query, cb) {
         let nodesSet = new Set(LaneNodeIds.nodes);
         hyperspaceLanesSet = new Set([...hyperspaceLanesSet, ...lanesSet]);
         hyperspaceNodesSet = new Set([...hyperspaceNodesSet, ...nodesSet]);
-        // const PathObject = value[0];
         const distance = value[1];
         hyperspaceRoutesLength.push(distance);
 
@@ -362,11 +353,11 @@ function graphDatabaseQuery(query, cb) {
 
       });
 
-      console.log("total hyperspace lanes set size: ", hyperspaceLanesSet.size);
-      console.log("total hyperspace nodes set size: ", hyperspaceNodesSet.size);
-      console.log("hyperspace Routes: ", hyperspaceRoutes.length);
-      console.log("hyperspace Routes length: ", hyperspaceRoutesLength.length);
-      console.log("hyperspace Nodes: ", hyperspaceRoutesNodes.length);
+      // console.log("total hyperspace lanes set size: ", hyperspaceLanesSet.size);
+      // console.log("total hyperspace nodes set size: ", hyperspaceNodesSet.size);
+      // console.log("hyperspace Routes: ", hyperspaceRoutes.length);
+      // console.log("hyperspace Routes length: ", hyperspaceRoutesLength.length);
+      // console.log("hyperspace Nodes: ", hyperspaceRoutesNodes.length);
 
       async.parallel([
         function(callback) {
@@ -485,6 +476,9 @@ function findShortestHyperspacePath(JumpData, cb) {
   const MaxNavigationJumps = 100;
   const jumpDataMax = JumpData.maxJumps;
 
+  console.log("JumpData: ", JumpData);
+
+
   const query = cypher()
     .match('(n1:Hyperspace_Node)')
     .where('n1.system = {start}', {start: JumpData.start})
@@ -492,46 +486,19 @@ function findShortestHyperspacePath(JumpData, cb) {
     .where('n2.system = {end}', {end: JumpData.end})
     // .match(pathsString(maxJumps))
     // .match('paths = ((n1:Hyperspace_Node)-[:HYPERSPACE_LANE*..{maxJumps}]-(n2:Hyperspace_Node))', {maxJumps: maxJumps})
+    // .match('paths = shortestPath((n1:Hyperspace_Node)-[:HYPERSPACE_LANE*..{maxJumps}]-(n2:Hyperspace_Node))', {maxJumps: MaxNavigationJumps})
     .match('paths = allShortestPaths((n1:Hyperspace_Node)-[:HYPERSPACE_LANE*..{maxJumps}]-(n2:Hyperspace_Node))', {maxJumps: MaxNavigationJumps})
+
+    .where('NONE (n IN nodes(paths) WHERE size(filter(x IN nodes(paths) WHERE n = x))> 1)')
+
     .with('REDUCE(distance = 0, rel in relationships(paths) | distance + rel.length) AS distance, paths')
 
     .return('paths, distance')
     .orderBy('distance')
     .limit("1");
 
-
   graphDatabaseQuery(query, cb);
 
-
-  // db.cypherQuery(query.compile(true), function(error, result){
-
-  //     if(error) {
-
-  //       cb(error, null);
-
-  //     } else {
-
-  //       // console.log(result.data[0]); // delivers an array of query results
-  //       console.log(result.columns); // delivers an array of names of objects getting returned
-
-  //       // const hyperspacePathResult = JSON.parse(JSON.stringify(result));
-
-  //       // console.log("Hyperspace Path Result: ", JSON.stringify(result));
-
-  //       // console.log("Hyperspace Path Data: ", result.data);
-  //       console.log("Hyperspace Path Start: ", result.data[0][0]);
-  //       console.log("Hyperspace Path End: ", result.data[0][1]);
-  //       console.log("Hyperspace Path Hyperspace Jumps: ", result.data[0][2]);
-
-  //       const numberOfHyperspacePaths = result.data.length;
-
-  //       console.log("Hyperspace Paths: ", numberOfHyperspacePaths);
-
-  //       cb(error, result);
-
-  //     }
-
-  //   });
 };
 
 function findManyHyperspacePaths(JumpData, cb) {
@@ -560,7 +527,10 @@ function findManyHyperspacePaths(JumpData, cb) {
     .where('n2.system = {end}', {end: JumpData.end})
     // .match(pathsString(maxJumps))
     .match('paths = ((n1:Hyperspace_Node)-[:HYPERSPACE_LANE*..{maxJumps}]-(n2:Hyperspace_Node))', {maxJumps: JumpData.maxJumps})
-    // .match('paths = allShortestPaths((n1:Hyperspace_Node)-[:HYPERSPACE_LANE*..{maxJumps}]-(n2:Hyperspace_Node))', {maxJumps: maxJumps})
+    // .match('paths = allShortestPaths((n1:Hyperspace_Node)-[:HYPERSPACE_LANE*..{maxJumps}]-(n2:Hyperspace_Node))', {maxJumps: JumpData.maxJumps})
+
+    // .where('NONE (n IN nodes(paths) WHERE size(filter(x IN nodes(paths) WHERE n = x))> 1)')
+
     .with('REDUCE(distance = 0, rel in relationships(paths) | distance + rel.length) AS distance, paths')
     .return('paths, distance')
     .orderBy('distance')
@@ -568,16 +538,8 @@ function findManyHyperspacePaths(JumpData, cb) {
 
   const queryString = query.toString();
 
-  // console.log("query: ", query);
-  // console.log("queryString: ", queryString);
-
-  // console.log("query.params(): ",   query.params());
-
-  // console.log("query.compile(true): ", query.compile(true));
-
   graphDatabaseQuery(query, cb);
 
-  // return query;
 };
 
 function pathsString(maxJumps, searchType) {
@@ -658,29 +620,16 @@ function testNeo4jDatabase(cb) {
   //   }
   // });
 
-
-  // findShortestHyperspacePath({start:'Coruscant', end:'Terminus', maxJumps:60}, (error, result) => {
-  //   if(error) {
-  //     console.log("error: ", error);
-  //   } else {
-  //     console.log("Shortest hyperspace paths results!!: ", result);
-  //   }
-  // });
-
 };
 
 function createNodeIndex() {
-
   db.cypherQuery('CREATE INDEX ON :Hyperspace_Node(system)', function(cypherError, cypherResult){
-
     if(cypherError) {
       console.log("cypherError: ", cypherError);
     } else {
       console.log("Index created on system property of Hyperspace Nodes!!");
     }
-
   });
-
 }
 
 
