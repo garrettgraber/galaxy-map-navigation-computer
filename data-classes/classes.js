@@ -274,8 +274,6 @@ class HyperSpacePath {
 	}
 };
 
-
-
 module.exports.HyperSpacePath = HyperSpacePath;
 
 class HyperSpacePathCollection {
@@ -334,3 +332,17 @@ class HyperSpacePathCollection {
 };
 
 module.exports.HyperSpacePathCollection = HyperSpacePathCollection;
+
+class HyperSpaceResultsStructure {
+	constructor(start, end, lanes, nodes, distance) {
+		this.start = start;
+		this.end = end;
+		this.lanes = lanes;
+		this.nodes = nodes;
+		this.distance = distance;
+	}
+
+	totalJumps() { return this.lanes.length }
+};
+
+module.exports.HyperSpaceResultsStructure = HyperSpaceResultsStructure;
