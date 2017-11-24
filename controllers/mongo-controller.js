@@ -255,6 +255,29 @@ const findOneHyperspaceNode = (SearchItem, cb) => {
 
 
 
+const findHyperspaceNode = (SearchItem, cb) => {
+
+	HyperspaceNodeModel.find(SearchItem,function(err, doc){
+
+		if(err) {
+
+			cb(err, {status: false, doc: null});
+
+		} else if(doc === null) {
+
+			cb(null, {status: false, doc: doc});
+
+		} else {
+
+			cb(null, {status: true, doc: doc});
+
+		}
+
+	});		
+};
+
+
+
 const getAllHyperspaceNodes = (cb) => {
 
 	HyperspaceNodeModel.find({}, function (err, docs) {
@@ -518,6 +541,7 @@ module.exports = {
 	totalHyperspaceNodes: totalHyperspaceNodes,
 	findHyperspaceNodeAndUpdate: findHyperspaceNodeAndUpdate,
 	findOneHyperspaceNode: findOneHyperspaceNode,
+	findHyperspaceNode: findHyperspaceNode,
 	emptyCollections: emptyCollections,
 	totalPlanets: totalPlanets,
 	totalCoordinates: totalCoordinates,

@@ -27,6 +27,8 @@ console.log("DatabaseLinks in NeoController: ", DatabaseLinks);
 
 let neo4jHostname = "";
 let hyperLanesCount = 0;
+const errorArray = [];
+const zeroNodesArray = [];
 
 console.log("NODE_ENV: ", process.env.NODE_ENV);
 const isDeveloping = process.env.NODE_ENV !== 'production';
@@ -79,6 +81,9 @@ function insertHyperspaceNodeIntoGraph(hyperspaceNode, cb) {
         cb(err, null);
       } else {
         console.log("node inserted: ", node._id);
+        if(node._id === 0) {
+          zeroNodesArray.push(hyperspaceNode.system);
+        }
         db.addLabelsToNode(node._id, 'Hyperspace_Node', function (errorAdd, resultAdd) {
             if(errorAdd) {
               console.log("Error adding labels: ", errorAdd);
@@ -90,16 +95,21 @@ function insertHyperspaceNodeIntoGraph(hyperspaceNode, cb) {
                   cb(errorRead, null);
                 } else {
                   // console.log("Node Labels: ", resultRead);
-                  cb(errorRead, resultRead);
+
+                  MongoController.findHyperspaceNodeAndUpdate({system: hyperspaceNode.system}, {nodeId: node._id}, function(errorNodeUpdate, resultNodeUpdate) {
+                    if(errorNodeUpdate) {
+                      console.log("errorNodeUpdate: ", errorNodeUpdate);
+                      errorArray.push(errorNodeUpdate);
+                    } else {
+                      cb(errorNodeUpdate, resultNodeUpdate);
+                    }
+                  });
+
                 }
               });
             }
         });
-        MongoController.findHyperspaceNodeAndUpdate({system: hyperspaceNode.system}, {nodeId: node._id}, function(error, result) {
-          if(error) {
-            console.log("error: ", error);
-          }
-        });
+        
       }
   });
 };
@@ -616,7 +626,7 @@ function findShortestHyperspacePath(JumpData, cb) {
 
   const dijkstraActive = true;
 
-  const MaxNavigationJumps = 100;
+  const MaxNavigationJumps = 120;
   const jumpDataMax = JumpData.maxJumps;
 
   console.log("JumpData: ", JumpData);
@@ -656,8 +666,6 @@ function findShortestHyperspacePath(JumpData, cb) {
 function findManyHyperspacePaths(JumpData, cb) {
 
   console.log("JumpData: ", JumpData);
-
-
 
   // executeDijkstraSearchMany(JumpData, function(error, results) {
   //   // console.log('dijkstra results: ', results);
@@ -746,9 +754,22 @@ function buildNeo4jDatabase(cb) {
 
             } else {
               console.log("Success building hyperspace lanes database!!!");
-              createNodeIndex();
-              cb(errorBuildLanes, true);
+              createNodeIndex(function(nodeIndexError, nodeIndexResult) {
 
+
+                findNodeById(0, function(zeroSearchError,  zeroSearchResult) {
+
+                  console.log("zeroSearchResult: ", zeroSearchResult);
+
+                  console.log("errorArray: ", errorArray);
+
+                  console.log("zeroNodesArray: ", zeroNodesArray);
+
+                  cb(errorBuildLanes, true);
+
+                });
+
+              });
             }
 
           })
@@ -761,7 +782,7 @@ function buildNeo4jDatabase(cb) {
 function testNeo4jDatabase(cb) {
 
 
-  findShortestHyperspacePath({start:'Tatooine', end:'Herdessa', maxJumps:5}, (error, result) => {
+  findShortestHyperspacePath({start:'Tatooine', end:'Herdessa', maxJumps:1}, (error, result) => {
     if(error) {
       console.log("error: ", error);
       cb(error, {})
@@ -782,13 +803,14 @@ function testNeo4jDatabase(cb) {
 
 };
 
-function createNodeIndex() {
+function createNodeIndex(cb) {
   db.cypherQuery('CREATE INDEX ON :Hyperspace_Node(system)', function(cypherError, cypherResult){
     if(cypherError) {
       console.log("cypherError: ", cypherError);
     } else {
       console.log("Index created on system property of Hyperspace Nodes!!");
-    }
+    }   
+    cb(cypherError, cypherResult);
   });
 }
 

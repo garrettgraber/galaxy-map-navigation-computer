@@ -12,10 +12,13 @@ NeoController.buildNeo4jDatabase(function(error, buildStatus) {
 		console.log("buildNeo4jDatabase error: ", error);
 	} else {
 		console.log("status of build: ", buildStatus);
-		NeoController.testNeo4jDatabase(function(testError, testResult) {
-			console.log("testResult: ", testResult);
-			process.exit();
-		});
+
+		process.exit();
+
+		// NeoController.testNeo4jDatabase(function(testError, testResult) {
+		// 	console.log("testResult: ", testResult);
+		// 	process.exit();
+		// });
 	}
 });
 
