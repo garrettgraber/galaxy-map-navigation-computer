@@ -597,7 +597,7 @@ function executeDijkstraSearchMany(JumpData, cb) {
 
     const SearchData = JSON.parse(data);
 
-    console.log("dijkstra results keys: ", Object.keys(SearchData));
+    console.log("dijkstra results keys: ", SearchData);
 
     // const lanes = _.map(SearchData.relationships, parseUriForIds);
     // const nodes = _.map(SearchData.nodes, parseUriForIds);
@@ -665,46 +665,54 @@ function findShortestHyperspacePath(JumpData, cb) {
 
 function findManyHyperspacePaths(JumpData, cb) {
 
+  const dijkstraActive = false;
+
   console.log("JumpData: ", JumpData);
 
-  // executeDijkstraSearchMany(JumpData, function(error, results) {
-  //   // console.log('dijkstra results: ', results);
-  // });
+  if(dijkstraActive) {
 
-  // const query = cypher()
-  //   .match('(n1:Hyperspace_Node)')
-  //   .where('n1.system = {start}', {start: start})
-  //   .match('(n2:Hyperspace_Node)')
-  //   .where('n2.system = {end}', {end: end})
-  //   // .match(pathsString(maxJumps))
-  //   // .match('paths = ((n1:Hyperspace_Node)-[:HYPERSPACE_LANE*..{maxJumps}]-(n2:Hyperspace_Node))', {maxJumps: maxJumps})
-  //   .match('paths = allShortestPaths((n1:Hyperspace_Node)-[:HYPERSPACE_LANE*..{maxJumps}]-(n2:Hyperspace_Node))', {maxJumps: maxJumps})
-  //   .with('REDUCE(distance = 0, rel in relationships(paths) | distance + rel.length) AS distance, paths')
+    executeDijkstraSearchMany(JumpData, function(error, results) {
+      // console.log('dijkstra results: ', results);
+    });
 
-  //   .return('paths, distance')
-  //   .orderBy('distance')
-  //   .limit(limit.toString());
+  } else {
+
+    // const query = cypher()
+    //   .match('(n1:Hyperspace_Node)')
+    //   .where('n1.system = {start}', {start: start})
+    //   .match('(n2:Hyperspace_Node)')
+    //   .where('n2.system = {end}', {end: end})
+    //   // .match(pathsString(maxJumps))
+    //   // .match('paths = ((n1:Hyperspace_Node)-[:HYPERSPACE_LANE*..{maxJumps}]-(n2:Hyperspace_Node))', {maxJumps: maxJumps})
+    //   .match('paths = allShortestPaths((n1:Hyperspace_Node)-[:HYPERSPACE_LANE*..{maxJumps}]-(n2:Hyperspace_Node))', {maxJumps: maxJumps})
+    //   .with('REDUCE(distance = 0, rel in relationships(paths) | distance + rel.length) AS distance, paths')
+
+    //   .return('paths, distance')
+    //   .orderBy('distance')
+    //   .limit(limit.toString());
 
 
-  const query = cypher()
-    .match('(n1:Hyperspace_Node)')
-    .where('n1.system = {start}', {start: JumpData.start})
-    .match('(n2:Hyperspace_Node)')
-    .where('n2.system = {end}', {end: JumpData.end})
-    // .match(pathsString(maxJumps))
-    .match('paths = ((n1:Hyperspace_Node)-[:HYPERSPACE_LANE*..{maxJumps}]-(n2:Hyperspace_Node))', {maxJumps: JumpData.maxJumps})
-    // .match('paths = allShortestPaths((n1:Hyperspace_Node)-[:HYPERSPACE_LANE*..{maxJumps}]-(n2:Hyperspace_Node))', {maxJumps: JumpData.maxJumps})
+    const query = cypher()
+      .match('(n1:Hyperspace_Node)')
+      .where('n1.system = {start}', {start: JumpData.start})
+      .match('(n2:Hyperspace_Node)')
+      .where('n2.system = {end}', {end: JumpData.end})
+      // .match(pathsString(maxJumps))
+      .match('paths = ((n1:Hyperspace_Node)-[:HYPERSPACE_LANE*..{maxJumps}]-(n2:Hyperspace_Node))', {maxJumps: JumpData.maxJumps})
+      // .match('paths = allShortestPaths((n1:Hyperspace_Node)-[:HYPERSPACE_LANE*..{maxJumps}]-(n2:Hyperspace_Node))', {maxJumps: JumpData.maxJumps})
 
-    // .where('NONE (n IN nodes(paths) WHERE size(filter(x IN nodes(paths) WHERE n = x))> 1)')
+      // .where('NONE (n IN nodes(paths) WHERE size(filter(x IN nodes(paths) WHERE n = x))> 1)')
 
-    .with('REDUCE(distance = 0, rel in relationships(paths) | distance + rel.length) AS distance, paths')
-    .return('paths, distance')
-    .orderBy('distance')
-    .limit(JumpData.limit.toString());
+      .with('REDUCE(distance = 0, rel in relationships(paths) | distance + rel.length) AS distance, paths')
+      .return('paths, distance')
+      .orderBy('distance')
+      .limit(JumpData.limit.toString());
 
-  const queryString = query.toString();
+    const queryString = query.toString();
 
-  graphDatabaseQuery(query, cb);
+    graphDatabaseQuery(query, cb);
+
+  }
 
 };
 
