@@ -27,6 +27,7 @@ console.log("DatabaseLinks in NeoController: ", DatabaseLinks);
 
 let neo4jHostname = "";
 let hyperLanesCount = 0;
+let undefinedLanes = [];
 const errorArray = [];
 const zeroNodesArray = [];
 
@@ -141,7 +142,9 @@ function insertHyperspaceLaneIntoGraph(hyperspaceLane, cb) {
         // console.log("end Node: ", endNode);
 
         if(startNode.status && endNode.status) {
-          db.insertRelationship(startNode.doc.nodeId, endNode.doc.nodeId, 'HYPERSPACE_LANE', {
+
+
+          const LaneData = {
             name: hyperspaceLane.name,
             hyperspaceHash: hyperspaceLane.hyperspaceHash,
             start: hyperspaceLane.start,
@@ -151,14 +154,36 @@ function insertHyperspaceLaneIntoGraph(hyperspaceLane, cb) {
             endCoordsLngLat: hyperspaceLane.endCoordsLngLat,
             startCoordsLngLat: hyperspaceLane.startCoordsLngLat,
             coordinates: hyperspaceLane.coordinates
-            }, function(err, relationship){
-              if(err) {
-                cb(err, null);
+          };
+
+
+          db.insertRelationship(startNode.doc.nodeId, endNode.doc.nodeId, 'HYPERSPACE_LANE', LaneData, function(err, relationship){
+            if(err) {
+              cb(err, null);
+            } else {
+              console.log("hyperspace lane added: ", relationship._id);
+              if(relationship._id === undefined) {
+                undefinedLanes.push({
+                  StartId: startNode.doc.nodeId,
+                  EndId: endNode.doc.nodeId,
+                  LaneData: LaneData,
+                  Relationship: relationship,
+                  Error: err
+                });
+                db.insertRelationship(startNode.doc.nodeId, endNode.doc.nodeId, 'HYPERSPACE_LANE', LaneData, function(errRetry, relationshipRetry){
+                  if(errRetry) {
+                    cb(errRetry, null);
+                  } else {
+                    console.log("relationshipRetry: ", relationshipRetry);
+                    hyperLanesCount++;
+                    cb(null, relationshipRetry);
+                  }
+                });
               } else {
-                console.log("hyperspace lane added: ", relationship._id);
                 hyperLanesCount++;
                 cb(null, relationship);
               }
+            }
           });
         } else {
           console.log("\nHyperlane not instered. Hyperspace Lane: ", hyperspaceLane);
@@ -772,6 +797,8 @@ function buildNeo4jDatabase(cb) {
                   console.log("errorArray: ", errorArray);
 
                   console.log("zeroNodesArray: ", zeroNodesArray);
+
+                  console.log("undefined lanes: ", undefinedLanes);
 
                   cb(errorBuildLanes, true);
 
