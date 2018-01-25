@@ -6,20 +6,21 @@ rm -rf /root/app/node_modules
 ln -s /root/node_modules /root/app/node_modules
 echo "npm start the app...";
 
-echo "Current directory: $PWD"
+echo "Current directory 1: $PWD"
 ls
 
 cd /root/app
 npm ls --depth=0
 
-echo "Current directory: $PWD"
+echo "Current directory 2: $PWD"
 ls
 
+echo "Checking npm, node, and bash"
 which npm
 which node
 which bash
 
-npm install
+# npm install
 
 
 npm ls --depth=0
@@ -31,7 +32,7 @@ npm ls --depth=0
 chmod -R 0777 /tmp
 echo "Tailing the service..."
 # tail -f /root/app/app.log
-echo "Current directory: $PWD"
+echo "Current directory 3: $PWD"
 ls
 echo "bootstrap.sh end."
 echo "Entering bash shell..."
@@ -40,7 +41,7 @@ echo "Entering bash shell..."
 npm ls --depth=0;
 
 
-echo "Rus status in bootstrap: $RUN_STATUS"
+echo "Run status in bootstrap: $RUN_STATUS"
 
 
 if [ "$RUN_STATUS" == "server" ]; then
