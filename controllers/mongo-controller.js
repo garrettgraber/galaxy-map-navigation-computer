@@ -17,9 +17,9 @@ console.log("isProduction: ", isProduction);
 
 
 if(DatabaseLinks.hasOwnProperty('mongo') && isDeveloping) {
-  	var MONGO = 'mongodb://' + DatabaseLinks.mongo.hostname + ':' + DatabaseLinks.mongo.port;
+  var MONGO = 'mongodb://' + DatabaseLinks.mongo.hostname + ':' + DatabaseLinks.mongo.port;
 } else if (isProduction) {
-	var MONGO = 'mongodb://172.31.40.234:27017/test';
+	var MONGO = 'mongodb://172.31.79.220:27017/test';
 } else {
 	// var TILES = 'http://localhost:8110/tiles-leaflet-new/{z}/{x}/{y}.png';
 	console.log("mongo failure!!!!");
@@ -115,18 +115,6 @@ const SectorSchema = new Schema({
 SectorSchema.set('autoIndex', true);
 
 const SectorModel = mongoose.model('SectorModel', SectorSchema);
-
-
-// const HyperLaneSchema = new Schema({
-// 	name: String,
-// 	hyperspaceHash: String,
-// 	start: String,
-// 	end: String,
-// 	startCoordsLngLat: { type : Array , "default" : [] },
-// 	endCoordsLngLat: { type : Array , "default" : [] },
-// 	length: Number,
-// 	link: String
-// });
 
 
 const HyperLaneSchema = new Schema({

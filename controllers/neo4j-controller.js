@@ -41,8 +41,7 @@ let graphDatabaseHostname = DatabaseLinks.graph.hostname;
 
 if(DatabaseLinks.hasOwnProperty('graph') && isDeveloping) {
   neo4jHostname = DatabaseLinks.graph.hostname;
-}
- else {
+} else {
   neo4jHostname = '0.0.0.0';
 }
 
