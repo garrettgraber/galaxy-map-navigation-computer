@@ -553,7 +553,6 @@ function generateStarPathCollection(PathCollectionOptions) {
   });
 }
 
-
 function executeDijkstraSearchFastest(JumpData, cb) {
 
   const PostData = {
@@ -591,9 +590,7 @@ function executeDijkstraSearchFastest(JumpData, cb) {
     buildFastestStarPath(CurrentHyperSpaceResultsStructure, cb);
 
   });
-
 }
-
 
 
 function executeDijkstraSearchMany(JumpData, cb) {
@@ -642,9 +639,7 @@ function executeDijkstraSearchMany(JumpData, cb) {
     // console.log("Total Jumps: ", CurrentHyperSpaceResultsStructure.totalJumps());
 
   });
-
 }
-
 
 function findShortestHyperspacePath(JumpData, cb) {
 
@@ -684,7 +679,6 @@ function findShortestHyperspacePath(JumpData, cb) {
     graphDatabaseQuery(query, cb);
 
   }
-
 };
 
 function findManyHyperspacePaths(JumpData, cb) {
@@ -834,7 +828,6 @@ function testNeo4jDatabase(cb) {
   //     console.log("Many hyperspace paths results success!!: ");
   //   }
   // });
-
 };
 
 function createNodeIndex(cb) {

@@ -38,7 +38,7 @@ function connectToDatabase(cb) {
 
 	const db = mongoose.connection;
 	db.on('error', function(error) {
-		console.error.bind(console, 'connection error:');
+		console.log('connection error:', error);
 		cb(error, {status: false, database:{}});
 	});
 	db.once('open', function() {
@@ -199,11 +199,7 @@ const createHyperspaceNode = (HyperspaceNodeCurrent, cb) => {
 		}
 
 	});
-
 };
-
-
-
 
 const findHyperspaceNodeAndUpdate = (SearchItem, UpdateItem, cb) => {
 
@@ -217,8 +213,6 @@ const findHyperspaceNodeAndUpdate = (SearchItem, UpdateItem, cb) => {
 		}
 	});		
 };
-
-
 
 const findOneHyperspaceNode = (SearchItem, cb) => {
 
@@ -241,8 +235,6 @@ const findOneHyperspaceNode = (SearchItem, cb) => {
 	});		
 };
 
-
-
 const findHyperspaceNode = (SearchItem, cb) => {
 
 	HyperspaceNodeModel.find(SearchItem,function(err, doc){
@@ -264,9 +256,7 @@ const findHyperspaceNode = (SearchItem, cb) => {
 	});		
 };
 
-
-
-const getAllHyperspaceNodes = (cb) => {
+const getAllHyperspaceNodes = async (cb) => {
 
 	HyperspaceNodeModel.find({}, function (err, docs) {
 	  // docs.forEach
@@ -280,9 +270,6 @@ const getAllHyperspaceNodes = (cb) => {
 	});
 };
 
-
-
-
 const totalHyperspaceNodes = () => {
 
 	HyperspaceNodeModel.count({}, function(err, count) {
@@ -291,8 +278,6 @@ const totalHyperspaceNodes = () => {
 
 	});
 };
-
-
 
 const emptyCollections = () => {
 
@@ -334,7 +319,6 @@ const emptyCollections = () => {
 		// removed!
 	});	
 };
-
 
 const totalPlanets = () => {
 
@@ -444,8 +428,6 @@ const createHyperspaceLane = (HyperSpaceLaneCurrent, cb) => {
 	});
 };
 
-
-
 const getAllHyperspaceLanes = (cb) => {
 
 	HyperLaneModel.find({}, function (err, docs) {
@@ -460,9 +442,6 @@ const getAllHyperspaceLanes = (cb) => {
 	});
 };
 
-
-
-
 const totalHyperspaceLanes = () => {
 
 	HyperLaneModel.count({}, function(err, count) {
@@ -471,7 +450,6 @@ const totalHyperspaceLanes = () => {
 
 	});
 };
-
 
 const createSector = (sector) => {
 
@@ -520,7 +498,6 @@ const totalCoordinates = () => {
 
 	});
 };
-
 
 
 module.exports = {
