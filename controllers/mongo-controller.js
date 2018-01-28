@@ -201,73 +201,29 @@ const createHyperspaceNode = (HyperspaceNodeCurrent, cb) => {
 	});
 };
 
-const findHyperspaceNodeAndUpdate = (SearchItem, UpdateItem, cb) => {
-
-	HyperspaceNodeModel.findOneAndUpdate(SearchItem, UpdateItem, {new: true}, function(err, doc){
-		if(err) {
-			// console.log("err: ", err);
-			cb(err, {});
-		} else {
-			// console.log("System has added coordinates: ", doc);
-			cb(null, doc);
-		}
-	});		
+const findHyperspaceNodeAndUpdate = async (SearchItem, UpdateItem) => {
+	try {
+		return await HyperspaceNodeModel.findOneAndUpdate(SearchItem, UpdateItem, {new: true}).exec();
+	} catch(err) {
+		console.log("error updating hyperspace node: ", err);
+	}
 };
 
-const findOneHyperspaceNode = (SearchItem, cb) => {
-
-	HyperspaceNodeModel.findOne(SearchItem,function(err, doc){
-
-		if(err) {
-
-			cb(err, {status: false, doc: null});
-
-		} else if(doc === null) {
-
-			cb(null, {status: false, doc: doc});
-
-		} else {
-
-			cb(null, {status: true, doc: doc});
-
-		}
-
-	});		
+const findOneHyperspaceNode = async (SearchItem) => {
+	try {
+		console.log("Found a Hyperspace Node");
+		return await HyperspaceNodeModel.findOne(SearchItem).exec();
+	} catch(err) {
+		console.log("error getting all hyperspace nodes: ", err);
+	}
 };
 
-const findHyperspaceNode = (SearchItem, cb) => {
-
-	HyperspaceNodeModel.find(SearchItem,function(err, doc){
-
-		if(err) {
-
-			cb(err, {status: false, doc: null});
-
-		} else if(doc === null) {
-
-			cb(null, {status: false, doc: doc});
-
-		} else {
-
-			cb(null, {status: true, doc: doc});
-
-		}
-
-	});		
-};
-
-const getAllHyperspaceNodes = async (cb) => {
-
-	HyperspaceNodeModel.find({}, function (err, docs) {
-	  // docs.forEach
-		if(err) {
-			console.log("error getting all hyperspace nodes: ", err);
-			cb(err, {});
-		} else {
-			cb(null, docs);
-		}
-
-	});
+const getAllHyperspaceNodes = async () => {
+	try {
+		return await HyperspaceNodeModel.find({}).exec();
+	} catch(err) {
+		console.log("error getting all hyperspace nodes: ", err);
+	}
 };
 
 const totalHyperspaceNodes = () => {
@@ -428,18 +384,12 @@ const createHyperspaceLane = (HyperSpaceLaneCurrent, cb) => {
 	});
 };
 
-const getAllHyperspaceLanes = (cb) => {
-
-	HyperLaneModel.find({}, function (err, docs) {
-	  // docs.forEach
-		if(err) {
-			console.log("error getting all hyperspace lanes: ", err);
-			cb(err, {});
-		} else {
-			cb(null, docs);
-		}
-
-	});
+const getAllHyperspaceLanes = async () => {
+	try {
+		return await HyperLaneModel.find({}).exec();
+	} catch(err) {
+		console.log("error getting all hyperspace lanes: ", err);
+	}
 };
 
 const totalHyperspaceLanes = () => {
@@ -506,7 +456,6 @@ module.exports = {
 	totalHyperspaceNodes: totalHyperspaceNodes,
 	findHyperspaceNodeAndUpdate: findHyperspaceNodeAndUpdate,
 	findOneHyperspaceNode: findOneHyperspaceNode,
-	findHyperspaceNode: findHyperspaceNode,
 	emptyCollections: emptyCollections,
 	totalPlanets: totalPlanets,
 	totalCoordinates: totalCoordinates,

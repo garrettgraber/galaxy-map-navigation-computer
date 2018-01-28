@@ -96,14 +96,15 @@ function insertHyperspaceNodeIntoGraph(hyperspaceNode, cb) {
                 } else {
                   // console.log("Node Labels: ", resultRead);
 
-                  MongoController.findHyperspaceNodeAndUpdate({system: hyperspaceNode.system}, {nodeId: node._id}, function(errorNodeUpdate, resultNodeUpdate) {
-                    if(errorNodeUpdate) {
+                  MongoController.findHyperspaceNodeAndUpdate({system: hyperspaceNode.system}, {nodeId: node._id})
+                    .then(nodeData => {
+                      console.log("Found and Updated a Hyperspace Node: ", nodeData);
+
+                      cb(null, nodeData);
+                    }).catch(err => {
                       console.log("errorNodeUpdate: ", errorNodeUpdate);
                       errorArray.push(errorNodeUpdate);
-                    } else {
-                      cb(errorNodeUpdate, resultNodeUpdate);
-                    }
-                  });
+                    });
 
                 }
               });
@@ -115,20 +116,52 @@ function insertHyperspaceNodeIntoGraph(hyperspaceNode, cb) {
 };
 
 function insertHyperspaceLaneIntoGraph(hyperspaceLane, cb) {
+  console.log("hyperspaceLane: ", hyperspaceLane);
   async.parallel([
-    function(callback) {    
-       MongoController.findOneHyperspaceNode({lng: hyperspaceLane.startCoordsLngLat[0], lat:hyperspaceLane.startCoordsLngLat[1]}, function(err, res) {
-        callback(err, res);
+    function(callback) {
+
+      const FoundHyperspaceNodePromise = MongoController.findOneHyperspaceNode({
+        lng: hyperspaceLane.endCoordsLngLat[0],
+        lat: hyperspaceLane.endCoordsLngLat[1]
       });
+
+      FoundHyperspaceNodePromise.then(nodeData => {
+        console.log("Found Hyperspace Node Promise 1: ", nodeData);
+        if(nodeData === null) {
+          callback(null, {status: false, doc: nodeData});
+        } else {
+          callback(null, {status: true, doc: nodeData});
+        }
+      }).catch(err => {
+        console.log("Found Hyperspace Node Promise error: ", err);
+        callback(err, {status: false, doc: null});
+      });
+
+
     },
     function(callback) {
-        MongoController.findOneHyperspaceNode({lng: hyperspaceLane.endCoordsLngLat[0], lat:hyperspaceLane.endCoordsLngLat[1]}, function(err, res) {
-          callback(err, res);
-        });
+
+      const FoundHyperspaceNodePromise = MongoController.findOneHyperspaceNode({
+        lng: hyperspaceLane.endCoordsLngLat[0],
+        lat: hyperspaceLane.endCoordsLngLat[1]
+      });
+
+      FoundHyperspaceNodePromise.then(nodeData => {
+        console.log("Found Hyperspace Node Promise 2: ", nodeData);
+        if(nodeData === null) {
+          callback(null, {status: false, doc: nodeData});
+        } else {
+          callback(null, {status: true, doc: nodeData});
+        }
+      }).catch(err => {
+        console.log("Found Hyperspace Node Promise error: ", err);
+        callback(err, {status: false, doc: null});
+      });
+
     }
   ],
   function(error, results) {
-      // console.log("hyperspaceLane: ", hyperspaceLane);
+      console.log("hyperspace lane results: ", results);
       if(error) {
         console.log("Error Finding Hyperspace Node: ", error);
         cb(err, null);
@@ -207,14 +240,8 @@ function deleteNodeFromGraph(nodeId) {
 
 function buildHyperSpaceNodeGraph(cb) {
   console.log("buildHyperSpaceNodeGraph has fired!");
-  MongoController.getAllHyperspaceNodes(function(error, result) {
-    if(error) {
-      console.log("error getting all hyperspace nodes: ", error);
-    } else {
-      // console.log("result: ", result);
-      generateHyperSpaceNodeGraph(result, cb);
-    }
-  });
+  MongoController.getAllHyperspaceNodes()
+    .then(nodesFound => generateHyperSpaceNodeGraph(nodesFound, cb));
 };
 
 function getFirstThirtyNodesFromGraph() {
@@ -244,14 +271,23 @@ function getFirstThirtyLanesFromGraph() {
 
 function buildHyperSpaceLaneGraph(cb) {
   console.log("buildHyperSpaceLaneGraph has fired!");
-  MongoController.getAllHyperspaceLanes(function(error, result) {
-    if(error) {
-      console.log("error getting all hyperspace lanes: ", error);
-    } else {
-      generateHyperSpaceLaneRelationship(result, cb);
-      // console.log("result: ", result);
-    }
-  });
+
+  // MongoController.getAllHyperspaceLanes(function(error, result) {
+  //   if(error) {
+  //     console.log("error getting all hyperspace lanes: ", error);
+  //   } else {
+  //     generateHyperSpaceLaneRelationship(result, cb);
+  //     // console.log("result: ", result);
+  //   }
+  // });
+
+
+  MongoController.getAllHyperspaceLanes()
+    .then(laneData => {
+      generateHyperSpaceLaneRelationship(laneData, cb);
+    }).catch(err => {
+      console.log("error getting all hyperspace lanes: ", err);
+    });
 };
 
 function generateHyperSpaceNodeGraph(hyperSpaceNodes, cb) {
