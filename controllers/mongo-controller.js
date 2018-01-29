@@ -166,7 +166,6 @@ const findOneHyperspaceNode = (SearchItem, cb) => {
 };
 
 
-
 // const findOneHyperspaceNode = async (SearchItem) => {
 // 	let NodeDataFound;
 // 	try {
@@ -191,14 +190,7 @@ const findOneHyperspaceNode = (SearchItem, cb) => {
 
 const findOneHyperspaceNodeAsync = async (SearchItem) => {
 	try {
-		const HyperspaceNodePromise = await HyperspaceNodeModel.findOne(SearchItem).exec();
-		HyperspaceNodePromise.then(nodeData => {
-			if(nodeData === null) {
-				return {status: false, doc: null};
-			} else {
-				return {status: true, doc: nodeData};
-			}
-		});
+		return await HyperspaceNodeModel.findOne(SearchItem).exec();
 	} catch(err) {
 		console.log("error updating hyperspace node: ", err);
 		throw new Error(400);
