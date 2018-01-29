@@ -12,6 +12,7 @@
   "dependencies": {
     "ajv": "^5.5.0",
     "async": "^2.5.0",
+    "bluebird": "^3.5.1",
     "body-parser": "^1.18.2",
     "cors": "^2.8.4",
     "curl": "^0.1.4",
