@@ -1,7 +1,5 @@
 const fs = require('fs'),
 	_ = require('lodash'),
-  asyncMethods = require('async'),
-
   Promise = require('bluebird'),
   // neo4j = require('neo4j-driver').v1,
   nodeNeo4j = require('node-neo4j'),
@@ -74,129 +72,119 @@ const dbSeraph = require("seraph")({
 console.log("db: ", db);
 
 
-function insertHyperspaceNodeIntoGraph(hyperspaceNode, cb) {
-  db.insertNodeAsync({
-    system: hyperspaceNode.system,
-    lng: hyperspaceNode.lng,
-    lat: hyperspaceNode.lat,
-    xGalacticLong: hyperspaceNode.xGalacticLong,
-    yGalacticLong: hyperspaceNode.yGalacticLong,
-    hyperspaceLanes: hyperspaceNode.hyperspaceLanes
-  }).then(nodeDataInserted => {
-      console.log("node inserted: ", nodeDataInserted._id);
-      if(nodeDataInserted._id === 0) { zeroNodesArray.push(hyperspaceNode.system) }
-      db.addLabelsToNodeAsync(nodeDataInserted._id, 'Hyperspace_Node')
-        .then(lablesAddedData => {
-          db.readLabelsAsync(nodeDataInserted._id).then(dataRead => {
-            MongoController.findHyperspaceNodeAndUpdate({system: hyperspaceNode.system}, {nodeId: nodeDataInserted._id})
-              .then(nodeData => {
-                // console.log("Found and Updated a Hyperspace Node: ", nodeData);
-                cb(null, nodeData);
-              }).catch(err => {
-                console.log("errorNodeUpdate: ", errorNodeUpdate);
-                errorArray.push(errorNodeUpdate);
-              });
-          }).catch(errorRead => {
-            console.log('Error reading labels: ', errorRead);
-            cb(errorRead, null);
-          });
-      })
-      .catch(lablesAddedError => {
-        console.log("Error adding labels: ", lablesAddedError);
-        cb(lablesAddedError, null);
-      });
-    }).catch(nodeDataError => {
-      console.log("node insertion error: ", nodeDataError);
-      cb(nodeDataError, null);
+
+async function insertHyperspaceNodeIntoGraphAsync(hyperspaceNode) {
+  try {
+    const nodeDataInserted = await db.insertNodeAsync({
+      system: hyperspaceNode.system,
+      lng: hyperspaceNode.lng,
+      lat: hyperspaceNode.lat,
+      xGalacticLong: hyperspaceNode.xGalacticLong,
+      yGalacticLong: hyperspaceNode.yGalacticLong,
+      hyperspaceLanes: hyperspaceNode.hyperspaceLanes
     });
+
+    const nodeDataId = nodeDataInserted._id;
+    console.log("node inserted: ", nodeDataId);
+
+    if(nodeDataId === 0) { zeroNodesArray.push(hyperspaceNode.system) }
+    const lablesAddedData = await db.addLabelsToNodeAsync(nodeDataId, 'Hyperspace_Node');
+    const dataRead = await db.readLabelsAsync(nodeDataId);
+    return await MongoController.findHyperspaceNodeAndUpdate({
+      system: hyperspaceNode.system
+    }, {
+      nodeId: nodeDataId
+    });
+  } catch(err) {
+    console.log("error inserting hyperspace node: ", err);
+    throw new Error(error);
+  }
 };
 
+async function insertHyperspaceLaneIntoGraphAsync(hyperspaceLane) {
+  try {
+    console.log("hyperspaceLane: ", hyperspaceLane);
 
-function insertHyperspaceNodePromise(error, result) {
-  return Promise.try(function() {
-    if (error) {
-      // Courtesy of Promise.try() this exception will be turned 
-      // into a returned promise that is rejected with the 
-      // exception as the reason
-      throw new Error(error);
-    }
-    return result;
-  });
-};
+    const startNodeData = await MongoController.findOneHyperspaceNodeAsync({
+      lng: hyperspaceLane.startCoordsLngLat[0],
+      lat: hyperspaceLane.startCoordsLngLat[1]
+    });
+    const endNodeData = await MongoController.findOneHyperspaceNodeAsync({
+      lng: hyperspaceLane.endCoordsLngLat[0],
+      lat: hyperspaceLane.endCoordsLngLat[1]
+    });
+    const startNode = (startNodeData === null)? {status:false, doc:null} : {status:true, doc:startNodeData};
+    const endNode = (endNodeData === null)? {status:false, doc:null} : {status:true, doc:endNodeData};
+    // console.log("\nresults: ", results);
+    // const startNode = results[0];
+    // const endNode = results[1];
+    // console.log("start Node: ", startNode);
+    // console.log("end Node: ", endNode);
+    if(startNode.status && endNode.status) {
+      const LaneData = {
+        name: hyperspaceLane.name,
+        hyperspaceHash: hyperspaceLane.hyperspaceHash,
+        start: hyperspaceLane.start,
+        end: hyperspaceLane.end,
+        length: hyperspaceLane.length,
+        link: hyperspaceLane.link,
+        endCoordsLngLat: hyperspaceLane.endCoordsLngLat,
+        startCoordsLngLat: hyperspaceLane.startCoordsLngLat,
+        coordinates: hyperspaceLane.coordinates
+      };
+      const relationship = await db.insertRelationshipAsync(startNode.doc.nodeId, endNode.doc.nodeId, 'HYPERSPACE_LANE', LaneData);
+      console.log("hyperspace lane added: ", relationship._id);
 
-
-
-function insertHyperspaceLaneIntoGraph(hyperspaceLane, cb) {
-  console.log("hyperspaceLane: ", hyperspaceLane);
-
-  const NodeFoundStartPromise = MongoController.findOneHyperspaceNodeAsync({
-    lng: hyperspaceLane.startCoordsLngLat[0],
-    lat: hyperspaceLane.startCoordsLngLat[1]
-  });
-
-  const NodeFoundEndPromise = MongoController.findOneHyperspaceNodeAsync({
-    lng: hyperspaceLane.endCoordsLngLat[0],
-    lat: hyperspaceLane.endCoordsLngLat[1]
-  });
-
-  Promise.all([NodeFoundStartPromise, NodeFoundEndPromise])
-    .then(function([startNodeData, endNodeData]) {
-
-      const startNode = (startNodeData === null)? {status:false, doc:null} : {status:true, doc:startNodeData};
-      const endNode = (endNodeData === null)? {status:false, doc:null} : {status:true, doc:endNodeData};
-      // console.log("\nresults: ", results);
-      // const startNode = results[0];
-      // const endNode = results[1];
-      // console.log("start Node: ", startNode);
-      // console.log("end Node: ", endNode);
-      if(startNode.status && endNode.status) {
-        const LaneData = {
-          name: hyperspaceLane.name,
-          hyperspaceHash: hyperspaceLane.hyperspaceHash,
-          start: hyperspaceLane.start,
-          end: hyperspaceLane.end,
-          length: hyperspaceLane.length,
-          link: hyperspaceLane.link,
-          endCoordsLngLat: hyperspaceLane.endCoordsLngLat,
-          startCoordsLngLat: hyperspaceLane.startCoordsLngLat,
-          coordinates: hyperspaceLane.coordinates
-        };
-        db.insertRelationshipAsync(startNode.doc.nodeId, endNode.doc.nodeId, 'HYPERSPACE_LANE', LaneData)
-          .then(relationship => {
-          console.log("hyperspace lane added: ", relationship._id);
-          if(relationship._id === undefined) {
-            undefinedLanes.push({
-              StartId: startNode.doc.nodeId,
-              EndId: endNode.doc.nodeId,
-              LaneData: LaneData,
-              Relationship: relationship,
-              Error: {message: 'relationship id does not exist'}
-            });
-            db.insertRelationshipAsync(startNode.doc.nodeId, endNode.doc.nodeId, 'HYPERSPACE_LANE', LaneData).then(relationshipRetry => {
-                console.log("relationshipRetry: ", relationshipRetry);
-                hyperLanesCount++;
-                cb(null, relationshipRetry);
-              }).catch(errRetry => {
-                cb(errRetry, null);
-              });
-          } else {
-            hyperLanesCount++;
-            cb(null, relationship);
-          }
-        }).catch(err => {
-            cb(err, null);
+      if(relationship._id === undefined) {
+        undefinedLanes.push({
+          StartId: startNode.doc.nodeId,
+          EndId: endNode.doc.nodeId,
+          LaneData: LaneData,
+          Relationship: relationship,
+          Error: {message: 'relationship id does not exist'}
         });
+        const relationshipRetry = await db.insertRelationshipAsync(startNode.doc.nodeId, endNode.doc.nodeId, 'HYPERSPACE_LANE', LaneData);
+        console.log("relationshipRetry: ", relationshipRetry);
+        hyperLanesCount++;
+        return relationshipRetry;
       } else {
-        console.log("\nHyperlane not instered. Hyperspace Lane: ", hyperspaceLane);
-        (startNode.status)? '' : console.log("Start node: ", startNode);
-        (endNode.status)? '' : console.log("End node: ", endNode);
-        cb(null, null);
+        hyperLanesCount++;
+        return relationship;
       }
+      
+    } else {
+      console.log("\nHyperlane not instered. Hyperspace Lane: ", hyperspaceLane);
+      (startNode.status)? '' : console.log("Start node: ", startNode);
+      (endNode.status)? '' : console.log("End node: ", endNode);
+      return null;
+    }
 
-  }).catch(nodesFoundError => {
-    console.log("Error Finding Hyperspace Node: ", nodesFoundError);
-    cb(nodesFoundError, null);
-  });
+  } catch(err) {
+    console.log("error inserting hyperspace lane: ", err);
+    throw new Error(error);
+  }
+};
+
+async function buildHyperSpaceNodeGraph() {
+  try {
+    console.log("buildHyperSpaceNodeGraph has fired!");
+    const nodesFound = await MongoController.getAllHyperspaceNodes();
+    const nodeGraphResults = await generateHyperSpaceNodeGraphAsync(nodesFound);
+    return null;
+  } catch(err) {
+    console.log("error building hyperspace node graph: ", err);
+  }
+};
+
+async function buildHyperSpaceLaneGraph() {
+  try {
+    console.log("buildHyperSpaceLaneGraph has fired!");
+    const laneData = await MongoController.getAllHyperspaceLanes();
+    const laneGraphResults = await generateHyperSpaceLaneRelationshipAsync(laneData);
+    return null;
+  } catch(err) {
+    console.log("error building hyperspace lane graph: ", err);
+  }
 };
 
 function deleteNodeFromGraph(nodeId) {
@@ -224,39 +212,6 @@ function getFirstThirtyLanesFromGraph() {
   }
 };
 
-function buildHyperSpaceNodeGraph(cb) {
-  console.log("buildHyperSpaceNodeGraph has fired!");
-  MongoController.getAllHyperspaceNodes()
-    .then(nodesFound => {
-      generateHyperSpaceNodeGraph(nodesFound, cb)
-    }).catch(err => {
-      console.log("error getting all hyperspace nodes: ", err);
-    });
-};
-
-function buildHyperSpaceLaneGraph(cb) {
-  console.log("buildHyperSpaceLaneGraph has fired!");
-  MongoController.getAllHyperspaceLanes()
-    .then(laneData => {
-      generateHyperSpaceLaneRelationship(laneData, cb);
-    }).catch(err => {
-      console.log("error getting all hyperspace lanes: ", err);
-    });
-};
-
-function generateHyperSpaceNodeGraph(hyperSpaceNodes, cb) {
-  asyncMethods.eachLimit(hyperSpaceNodes, 5, insertHyperspaceNodeIntoGraph, function(err){
-    if(err) {
-      console.log("Error loading hyperspace node data: ", err);
-      cb(err);
-    } else {
-      console.log("Hyperspace Node data loaded! Total nodes in graph database: ", hyperSpaceNodes.length);
-      cb(null);
-    }
-  });
-};
-
-
 function generateHyperSpaceNodeGraphAsync(hyperSpaceNodes) {
   return Promise.map(hyperSpaceNodes, node => { 
     return insertHyperspaceNodeIntoGraphAsync(node);
@@ -267,39 +222,15 @@ function generateHyperSpaceNodeGraphAsync(hyperSpaceNodes) {
   );
 };
 
-
-function generateHyperSpaceLaneRelationship(hyperSpaceLanes, cb) {
-  asyncMethods.eachLimit(hyperSpaceLanes, 5, insertHyperspaceLaneIntoGraph, function(err){
-    if(err) {
-      console.log("Error loading hyperspace lane data: ", err);
-      cb(err);
-    } else {
-      console.log("Hyperspace Lane data loaded! Total lanes in graph database: ", hyperSpaceLanes.length);
-      cb(null);
+function generateHyperSpaceLaneRelationshipAsync(hyperSpaceLanes) {
+  return Promise.map(hyperSpaceLanes, lane => { 
+    return insertHyperspaceLaneIntoGraphAsync(lane);
+  }, 
+    {
+      concurrency: 5
     }
-  });
+  );
 };
-
-// function getHyperSpaceLane(laneId, cb) {
-//   db.readRelationship(laneId, function(err, relationship){
-//     if(err) throw err;
-//     if(err) {
-//       cb(err, null)
-//     } else {
-//       cb(null, relationship);
-//     }
-//   });
-// };
-
-// function getHyperSpaceNode(nodeId, cb) {
-//   db.readNode(nodeId, function(err, node){
-//     if(err) {
-//       cb(err, null);
-//     } else {
-//       cb(null, node);
-//     }
-//   });
-// };
 
 function parseUriForIds(uri) {
   const uriParsed = uri.split('/');
@@ -327,28 +258,17 @@ function getLaneAndNodeIds(PathObject) {
   };
 };
 
-function findNodeById(nodeId, cb) {
-  db.readNode(nodeId, function(err, node){
-    if(err) throw err;
-    cb(err, node);
-  });
-};
-
-
 function findNodeByIdAsync(nodeId) {
   return db.readNodeAsync(nodeId);
-};
-
-function findLaneById(laneId, cb) {
-  db.readRelationship(laneId, function(err, relationship){
-    if(err) throw err;
-    cb(err, relationship);
-  });
 };
 
 function findLaneByIdAsync(laneId) {
   return db.readRelationshipAsync(laneId);
 };
+
+
+
+
 
 
 function graphDatabaseQuery(query, cb) {
@@ -408,13 +328,18 @@ function graphDatabaseQuery(query, cb) {
       hyperspaceRoutesLength: hyperspaceRoutesLength,
       hyperspaceRoutesNodes: hyperspaceRoutesNodes, 
       cb: cb
+    }).then(StarPath => {
+      cb(null, StarPath);
+    }).catch(nodeAndLanesError => {
+      console.log("Error finding nodes and lanes: ", nodeAndLanesError);
+      cb(nodeAndLanesError, {});
     });
   }).catch(cypherError => {
     cb(cypherError, null);
   });
 };
 
-function buildFastestStarPath(JumpStructure, cb) {
+function buildFastestStarPath(JumpStructure) {
 
   let hyperspaceNodesSet = new Set();
   let hyperspaceLanesSet = new Set();
@@ -435,19 +360,18 @@ function buildFastestStarPath(JumpStructure, cb) {
   hyperspaceNodesSet = new Set([...hyperspaceNodesSet, ...nodesSet]);
   hyperspaceRoutesLength.push(JumpStructure.distance);
 
-  generateStarPathCollection({
+  return generateStarPathCollection({
     start: JumpStructure.start,
     end: JumpStructure.end,
     hyperspaceLanesSet: hyperspaceLanesSet,
     hyperspaceNodesSet: hyperspaceNodesSet,
     hyperspaceRoutes: hyperspaceRoutes,
     hyperspaceRoutesLength: hyperspaceRoutesLength,
-    hyperspaceRoutesNodes: hyperspaceRoutesNodes, 
-    cb: cb
+    hyperspaceRoutesNodes: hyperspaceRoutesNodes
   });
 };
 
-function generateStarPathCollection(PathCollectionOptions) {
+async function generateStarPathCollection(PathCollectionOptions) {
   const start = PathCollectionOptions.start;
   const end = PathCollectionOptions.end;
   const hyperspaceLanesSet = PathCollectionOptions.hyperspaceLanesSet;
@@ -457,74 +381,69 @@ function generateStarPathCollection(PathCollectionOptions) {
   const hyperspaceRoutesNodes = PathCollectionOptions.hyperspaceRoutesNodes;
   const cb = PathCollectionOptions.cb;
 
-  const LanesArrayPromise = Promise.map([...hyperspaceLanesSet], function(laneId) {
+  const lanesArray = await Promise.map([...hyperspaceLanesSet], function(laneId) {
     // Promise.map awaits for returned promises as well.
     return findLaneByIdAsync(laneId);
   });
 
-  const NodesArrayPromise = Promise.map([...hyperspaceNodesSet], function(nodeId) {
+  const nodesArray = await Promise.map([...hyperspaceNodesSet], function(nodeId) {
     // Promise.map awaits for returned promises as well.
     return findNodeByIdAsync(nodeId);
   });
 
-  Promise.all([LanesArrayPromise, NodesArrayPromise]).then(function([lanesArray, nodesArray]) {
-    console.log("Lane Array length: ", lanesArray.length);
-    console.log("Nodes Array length: ", nodesArray.length);
-    const hyperspaceLaneData = lanesArray;
-    const hyperspaceNodeData = nodesArray;
-    const hyperspaceLanesArray = _.map(hyperspaceLaneData, function(Lane) {
-      return new HyperSpaceLane(
-        Lane.name,
-        Lane.hyperspaceHash,
-        Lane.start,
-        Lane.end,
-        Lane.startCoordsLngLat,
-        Lane.endCoordsLngLat,
-        Lane.length,
-        Lane.link,
-        Lane._start,
-        Lane._end,
-        Lane.coordinates,
-        Lane._id
-      );
-    });
-    const hyperspaceNodesArray = _.map(hyperspaceNodeData, function(Node) {
-      return new HyperSpaceNode(
-        Node.system,
-        Node.lng,
-        Node.lat,
-        Node.hyperspaceLanes,
-        Node._id,
-        Node.xGalacticLong,
-        Node.yGalacticLong
-      );
-    });
-    const StarPathCollection = new HyperSpacePathCollection(
-      start,
-      end,
-      hyperspaceLanesArray,
-      hyperspaceNodesArray
+  console.log("Lane Array length: ", lanesArray.length);
+  console.log("Nodes Array length: ", nodesArray.length);
+  const hyperspaceLaneData = lanesArray;
+  const hyperspaceNodeData = nodesArray;
+  const hyperspaceLanesArray = _.map(hyperspaceLaneData, function(Lane) {
+    return new HyperSpaceLane(
+      Lane.name,
+      Lane.hyperspaceHash,
+      Lane.start,
+      Lane.end,
+      Lane.startCoordsLngLat,
+      Lane.endCoordsLngLat,
+      Lane.length,
+      Lane.link,
+      Lane._start,
+      Lane._end,
+      Lane.coordinates,
+      Lane._id
     );
-    for(let i=0; i < hyperspaceRoutes.length; i++) {
-      let routes = hyperspaceRoutes[i];
-      let distance = hyperspaceRoutesLength[i];
-      let nodes = hyperspaceRoutesNodes[i];
-      const StarPath = new HyperSpacePath(start, end, distance, routes, nodes, '', routes.length);
-      StarPathCollection.paths.push(StarPath);
-    }
-    const Path = StarPathCollection.paths[0];
-    if(Path) {
-      const PathLanes = Path.createArrayOfHyperspaceLanes(StarPathCollection.lanes);
-      const PathNodes = Path.createArrayOfHyperspaceNodes(StarPathCollection.nodes);
-      StarPathCollection.linkHyperspacePaths();
-      cb(null, StarPathCollection);
-    } else {
-      cb(null, {});
-    }
-  }).catch(nodeAndLanesError => {
-    console.log("Error finding nodes and lanes: ", nodeAndLanesError);
-    cb(nodeAndLanesError, {});
   });
+  const hyperspaceNodesArray = _.map(hyperspaceNodeData, function(Node) {
+    return new HyperSpaceNode(
+      Node.system,
+      Node.lng,
+      Node.lat,
+      Node.hyperspaceLanes,
+      Node._id,
+      Node.xGalacticLong,
+      Node.yGalacticLong
+    );
+  });
+  const StarPathCollection = new HyperSpacePathCollection(
+    start,
+    end,
+    hyperspaceLanesArray,
+    hyperspaceNodesArray
+  );
+  for(let i=0; i < hyperspaceRoutes.length; i++) {
+    let routes = hyperspaceRoutes[i];
+    let distance = hyperspaceRoutesLength[i];
+    let nodes = hyperspaceRoutesNodes[i];
+    const StarPath = new HyperSpacePath(start, end, distance, routes, nodes, '', routes.length);
+    StarPathCollection.paths.push(StarPath);
+  }
+  const Path = StarPathCollection.paths[0];
+  if(Path) {
+    const PathLanes = Path.createArrayOfHyperspaceLanes(StarPathCollection.lanes);
+    const PathNodes = Path.createArrayOfHyperspaceNodes(StarPathCollection.nodes);
+    StarPathCollection.linkHyperspacePaths();
+    return StarPathCollection;
+  } else {
+    return {};
+  }
 };
 
 function executeDijkstraSearchFastest(JumpData, cb) {
@@ -560,8 +479,12 @@ function executeDijkstraSearchFastest(JumpData, cb) {
     // console.log("Distance: ", CurrentHyperSpaceResultsStructure.distance);
     // console.log("Total Jumps: ", CurrentHyperSpaceResultsStructure.totalJumps());
 
-
-    buildFastestStarPath(CurrentHyperSpaceResultsStructure, cb);
+    buildFastestStarPath(CurrentHyperSpaceResultsStructure).then(StarPath => {
+      cb(null, StarPath);
+    }).catch(nodeAndLanesError => {
+      console.log("Error finding nodes and lanes: ", nodeAndLanesError);
+      cb(nodeAndLanesError, {});
+    });
 
   });
 };
@@ -730,7 +653,7 @@ function buildNeo4jDatabase(cb) {
 
     } else {
 
-      buildHyperSpaceNodeGraph(function(errorBuildNodes) {
+      buildHyperSpaceNodeGraph().then(errorBuildNodes => {
 
         if(errorBuildNodes) {
           console.log("errorBuild: ", errorBuildNodes);
@@ -738,7 +661,7 @@ function buildNeo4jDatabase(cb) {
         } else {
           console.log("Success building hyperspace node database!!!");
 
-          buildHyperSpaceLaneGraph(function(errorBuildLanes) {
+          buildHyperSpaceLaneGraph().then(errorBuildLanes => {
 
             if(errorBuildLanes) {
               console.log("errorBuildLanes: ", errorBuildLanes);
@@ -750,19 +673,22 @@ function buildNeo4jDatabase(cb) {
               createNodeIndex().then(nodeIndexResult => {
                 console.log("Index created on system property of Hyperspace Nodes!!");
 
-                findNodeById(0, function(zeroSearchError,  zeroSearchResult) {
+                findNodeByIdAsync(0).then(zeroSearchResult => {
                   console.log("zeroSearchResult: ", zeroSearchResult);
                   console.log("errorArray: ", errorArray);
                   console.log("zeroNodesArray: ", zeroNodesArray);
                   console.log("undefined lanes: ", undefinedLanes);
                   cb(errorBuildLanes, true);
+                }).catch(zeroSearchError => {
+                  console.log("Error findind nodes with zero id's: ", zeroSearchError);
+
                 });
 
               }).catch(nodeIndexError => {
                 console.log("Error creating Index created on Hyperspace Nodes!!");
               });
             }
-          })
+          });
         }
       });
     }
