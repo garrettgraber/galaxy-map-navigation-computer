@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 const Promise = require('bluebird');
 const DatabaseLinks = require('docker-links').parseLinks(process.env);
-const Planet = require('../data-classes/classes.js').Planet;
-const HyperSpaceLane = require('../data-classes/classes.js').HyperSpaceLane;
+const Planet = require('../data-classes/planet.js');
+const HyperSpaceLane = require('../data-classes/hyperspace-lane.js');
 const Alphabets = require('../data-classes/alphabets.js');
 const Schema = mongoose.Schema;
 
@@ -48,6 +48,9 @@ function connectToDatabase(cb) {
 	  	});
 	});
 };
+
+const connectToMongo = Promise.promisify(connectToDatabase);
+
 
 
 const PlanetSchema = new Schema({
@@ -337,6 +340,7 @@ const searchCoordinate = async (currentCoordinates) => {
 
 module.exports = {
 	connectToDatabase: connectToDatabase,
+	connectToMongo: connectToMongo,
 	createHyperspaceNode: createHyperspaceNode,
 	totalHyperspaceNodes: totalHyperspaceNodes,
 	findHyperspaceNodeAndUpdate: findHyperspaceNodeAndUpdate,
