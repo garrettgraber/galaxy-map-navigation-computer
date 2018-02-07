@@ -29,6 +29,8 @@ let hyperLanesCount = 0;
 let undefinedLanes = [];
 const errorArray = [];
 const zeroNodesArray = [];
+const nodesUploadedArray = [];
+const nodesNotUploadedArray = [];
 
 console.log("NODE_ENV: ", process.env.NODE_ENV);
 const isDeveloping = process.env.NODE_ENV !== 'production';
@@ -63,6 +65,12 @@ async function insertHyperspaceNodeIntoGraphAsync(hyperspaceNode) {
     const nodeDataId = nodeDataInserted._id;
     console.log("node inserted: ", nodeDataId);
 
+    if(Number.isInteger(nodeDataId)) {
+      nodesUploadedArray.push(nodeDataId);
+    } else {
+      nodesNotUploadedArray.push(nodeDataId);
+    }
+
     if(nodeDataId === 0) { zeroNodesArray.push(hyperspaceNode.system) }
     const lablesAddedData = await db.addLabelsToNodeAsync(nodeDataId, 'Hyperspace_Node');
     const dataRead = await db.readLabelsAsync(nodeDataId);
@@ -79,7 +87,7 @@ async function insertHyperspaceNodeIntoGraphAsync(hyperspaceNode) {
 
 async function insertHyperspaceLaneIntoGraphAsync(hyperspaceLane) {
   try {
-    console.log("hyperspaceLane: ", hyperspaceLane);
+    // console.log("hyperspaceLane: ", hyperspaceLane);
 
     const startNodeData = await MongoController.findOneHyperspaceNodeAsync({
       lng: hyperspaceLane.startCoordsLngLat[0],
@@ -193,7 +201,7 @@ function generateHyperSpaceNodeGraphAsync(hyperSpaceNodes) {
     return insertHyperspaceNodeIntoGraphAsync(node);
   }, 
     {
-      concurrency: 5
+      concurrency: 1
     }
   );
 };
@@ -394,7 +402,9 @@ async function buildNeo4jDatabaseAsync() {
         console.log("zeroSearchResult: ", zeroSearchResult);
         console.log("errorArray: ", errorArray);
         console.log("zeroNodesArray: ", zeroNodesArray);
-        console.log("undefined lanes: ", undefinedLanes);
+        console.log("undefined lanes: ", undefinedLanes.length);
+        console.log("nodesUploadedArray: ", nodesUploadedArray.length);
+        console.log("nodesNotUploadedArray: ", nodesNotUploadedArray.length);
 
         return true;
       }
