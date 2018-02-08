@@ -11,6 +11,7 @@ const fs = require('fs'),
   uuidv4 = require('uuid/v4'),
   distance = require('euclidean-distance'),
   curl = require('curl'),
+  Geohash = require('latlon-geohash'),
   perf = require('execution-time')();
 
 
@@ -24,6 +25,7 @@ const generateStarPathCollection = require('../factories/generate-star-path-coll
 const DatabaseLinks = require('docker-links').parseLinks(process.env);
 const MongoController = require('./mongo-controller.js');
 
+const geoHashPrecision = 22;
 let neo4jHostname = "";
 let hyperLanesCount = 0;
 let undefinedLanes = [];
@@ -53,6 +55,9 @@ Promise.promisifyAll(db);
 
 async function insertHyperspaceNodeIntoGraphAsync(hyperspaceNode) {
   try {
+
+    // console.log("Inserting hyperspace lane: ", hyperspaceNode);
+
     const nodeDataInserted = await db.insertNodeAsync({
       system: hyperspaceNode.system,
       lng: hyperspaceNode.lng,
@@ -63,6 +68,7 @@ async function insertHyperspaceNodeIntoGraphAsync(hyperspaceNode) {
     });
 
     const nodeDataId = nodeDataInserted._id;
+    const nodeDataGeoHash = Geohash.encode(hyperspaceNode.lat, hyperspaceNode.lng, geoHashPrecision);
     console.log("node inserted: ", nodeDataId);
 
     if(Number.isInteger(nodeDataId)) {
@@ -73,15 +79,23 @@ async function insertHyperspaceNodeIntoGraphAsync(hyperspaceNode) {
 
     if(nodeDataId === 0) { zeroNodesArray.push(hyperspaceNode.system) }
     const lablesAddedData = await db.addLabelsToNodeAsync(nodeDataId, 'Hyperspace_Node');
-    const dataRead = await db.readLabelsAsync(nodeDataId);
-    return await MongoController.findHyperspaceNodeAndUpdate({
-      system: hyperspaceNode.system
+    // const dataRead = await db.readLabelsAsync(nodeDataId);
+
+    // console.log("Lables added to node: ", nodeDataId);
+
+    const NodeUpated = await MongoController.findHyperspaceNodeAndUpdate({
+      geoHash: nodeDataGeoHash
     }, {
       nodeId: nodeDataId
     });
+
+    // console.log("NodeUpated success: ", NodeUpated);
+
+
+    return NodeUpated;
   } catch(err) {
     console.log("error inserting hyperspace node: ", err);
-    throw new Error(error);
+    throw new Error(err);
   }
 };
 
@@ -211,7 +225,7 @@ function generateHyperSpaceLaneRelationshipAsync(hyperSpaceLanes) {
     return insertHyperspaceLaneIntoGraphAsync(lane);
   }, 
     {
-      concurrency: 5
+      concurrency: 1
     }
   );
 };
@@ -321,6 +335,7 @@ function formatHypespaceResultsData(cypherResult) {
 
 async function findShortestHyperspacePath(JumpData) {
   try {
+    console.time('Shortest Jump Time');
     const MaxNavigationJumps = 120;
     JumpData.maxJumps = MaxNavigationJumps;
 
@@ -350,7 +365,9 @@ async function findShortestHyperspacePath(JumpData) {
     );
 
     CurrentHyperSpaceResultsStructure.hyperspaceSingleJump();
-    return await CurrentHyperSpaceResultsStructure.generateStarPathCollection(db);
+    const StarPathCreated = await CurrentHyperSpaceResultsStructure.generateStarPathCollection(db);
+    console.timeEnd('Shortest Jump Time')
+;    return StarPathCreated;
   } catch(err) {
     console.log("error finding Shortest hyperspace path: ", err);
     throw new Error(400);
@@ -398,13 +415,17 @@ async function buildNeo4jDatabaseAsync() {
         const nodeIndexResult = await createNodeIndex();
         console.log("Index created on system property of Hyperspace Nodes!!");
 
+        const totalUndefinedLanes = undefinedLanes.length;
+        const lastTenUndefinedLanes = undefinedLanes.slice(totalUndefinedLanes - 10, totalUndefinedLanes);
+
         const zeroSearchResult = await findNodeByIdAsync(0);
         console.log("zeroSearchResult: ", zeroSearchResult);
         console.log("errorArray: ", errorArray);
         console.log("zeroNodesArray: ", zeroNodesArray);
-        console.log("undefined lanes: ", undefinedLanes.length);
+        console.log("totalUndefinedLanes: ", totalUndefinedLanes);
         console.log("nodesUploadedArray: ", nodesUploadedArray.length);
         console.log("nodesNotUploadedArray: ", nodesNotUploadedArray.length);
+        console.log("undefined lanes: ", lastTenUndefinedLanes);
 
         return true;
       }
