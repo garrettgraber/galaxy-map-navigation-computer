@@ -1,5 +1,5 @@
-const   Promise = require('bluebird'),
-							_ = require('lodash');
+const Promise = require('bluebird'),
+						_ = require('lodash');
 
 
 const HyperSpaceLane = require('../data-classes/hyperspace-lane.js');
@@ -52,7 +52,8 @@ async function generateStarPathCollection(PathCollectionOptions, db) {
       Node.hyperspaceLanes,
       Node._id,
       Node.xGalacticLong,
-      Node.yGalacticLong
+      Node.yGalacticLong,
+      Node.geoHash
     );
   });
   const StarPathCollection = new HyperSpacePathCollection(

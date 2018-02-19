@@ -48,8 +48,27 @@ app.get('/', function(req, res) {
 
 
 
-app.post('/hyperspace-jump/calc-shortest', function(req, res) {
+app.post('/hyperspace-connection/csilla', function(req, res) {
+	const JumpData = req.body;
+	NeoController.pointConnectedToCsilla(JumpData).then(ConnectionStatus => {
+		res.json(ConnectionStatus);
+	}).catch(error => {
+		console.log("error: ", error);
+		res.sendStatus(500);
+	});
+});
 
+app.post('/hyperspace-connection/coruscant', function(req, res) {
+	const JumpData = req.body;
+	NeoController.pointConnectedToCoruscant(JumpData).then(ConnectionStatus => {
+		res.json(ConnectionStatus);
+	}).catch(error => {
+		console.log("error: ", error);
+		res.sendStatus(500);
+	});
+});
+
+app.post('/hyperspace-jump/calc-shortest', function(req, res) {
 	console.log("calculate hyperspace jump: ", req.body);
 	const JumpData = req.body;
 
@@ -61,14 +80,10 @@ app.post('/hyperspace-jump/calc-shortest', function(req, res) {
 		console.log("error: ", error);
 		res.sendStatus(500);
 	});
-	       
 });
 
 
-
-
 app.post('/hyperspace-jump/calc-many', function(req, res) {
-
 	console.log("calculate hyperspace jump: ", req.body);
 	const JumpData = req.body;
 
@@ -83,10 +98,6 @@ app.post('/hyperspace-jump/calc-many', function(req, res) {
 });
 
 
-
 app.listen(serverPort, ip.address(), function () {
-
 	console.log('Example app listening on port http://' + ip.address() + ':' +  serverPort + '!');
-
 });
-

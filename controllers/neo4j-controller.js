@@ -18,7 +18,7 @@ const fs = require('fs'),
 const Planet = require('../data-classes/planet.js');
 const HyperSpaceLane = require('../data-classes/hyperspace-lane.js');
 const HyperSpacePath = require('../data-classes/hyperspace-path.js');
-const HyperSpaceNode = require('../data-classes/hyperspace-node.js');
+// const HyperSpaceNode = require('../data-classes/hyperspace-node.js');
 const HyperSpacePathCollection = require('../data-classes/hyperspace-path-collection.js');
 const HyperSpaceResultsStructure = require('../data-classes/hyperspace-results-structure.js');
 const generateStarPathCollection = require('../factories/generate-star-path-collection.js');
@@ -55,20 +55,19 @@ Promise.promisifyAll(db);
 
 async function insertHyperspaceNodeIntoGraphAsync(hyperspaceNode) {
   try {
-
     // console.log("Inserting hyperspace lane: ", hyperspaceNode);
-
+    const nodeDataGeoHash = Geohash.encode(hyperspaceNode.lat, hyperspaceNode.lng, geoHashPrecision);
     const nodeDataInserted = await db.insertNodeAsync({
       system: hyperspaceNode.system,
       lng: hyperspaceNode.lng,
       lat: hyperspaceNode.lat,
       xGalacticLong: hyperspaceNode.xGalacticLong,
       yGalacticLong: hyperspaceNode.yGalacticLong,
-      hyperspaceLanes: hyperspaceNode.hyperspaceLanes
+      hyperspaceLanes: hyperspaceNode.hyperspaceLanes,
+      geoHash: nodeDataGeoHash
     });
 
     const nodeDataId = nodeDataInserted._id;
-    const nodeDataGeoHash = Geohash.encode(hyperspaceNode.lat, hyperspaceNode.lng, geoHashPrecision);
     console.log("node inserted: ", nodeDataId);
 
     if(Number.isInteger(nodeDataId)) {
@@ -79,20 +78,11 @@ async function insertHyperspaceNodeIntoGraphAsync(hyperspaceNode) {
 
     if(nodeDataId === 0) { zeroNodesArray.push(hyperspaceNode.system) }
     const lablesAddedData = await db.addLabelsToNodeAsync(nodeDataId, 'Hyperspace_Node');
-    // const dataRead = await db.readLabelsAsync(nodeDataId);
-
-    // console.log("Lables added to node: ", nodeDataId);
-
-    const NodeUpated = await MongoController.findHyperspaceNodeAndUpdate({
+    return await MongoController.findHyperspaceNodeAndUpdate({
       geoHash: nodeDataGeoHash
     }, {
       nodeId: nodeDataId
     });
-
-    // console.log("NodeUpated success: ", NodeUpated);
-
-
-    return NodeUpated;
   } catch(err) {
     console.log("error inserting hyperspace node: ", err);
     throw new Error(err);
@@ -102,7 +92,6 @@ async function insertHyperspaceNodeIntoGraphAsync(hyperspaceNode) {
 async function insertHyperspaceLaneIntoGraphAsync(hyperspaceLane) {
   try {
     // console.log("hyperspaceLane: ", hyperspaceLane);
-
     const startNodeData = await MongoController.findOneHyperspaceNodeAsync({
       lng: hyperspaceLane.startCoordsLngLat[0],
       lat: hyperspaceLane.startCoordsLngLat[1]
@@ -265,7 +254,6 @@ function findLaneByIdAsync(laneId) {
 };
 
 
-
 async function graphDatabaseQueryAsync(query) {
   try {
     const cypherResult = await db.cypherQueryAsync(query.compile(true));
@@ -335,6 +323,8 @@ function formatHypespaceResultsData(cypherResult) {
 
 async function findShortestHyperspacePath(JumpData) {
   try {
+    // const CoruscantNode = await pointConnectedToCoruscant({});
+
     console.time('Shortest Jump Time');
     const MaxNavigationJumps = 120;
     JumpData.maxJumps = MaxNavigationJumps;
@@ -371,6 +361,76 @@ async function findShortestHyperspacePath(JumpData) {
   } catch(err) {
     console.log("error finding Shortest hyperspace path: ", err);
     throw new Error(400);
+  }
+};
+
+
+async function pointConnectedToCoruscant(Point) {
+  try {
+    console.log("\nChecking Coruscant connection..", Point);
+    const JumpData = {
+      maxJumps: 120,
+      limit: 1,
+      start: Point.nodeSystem,
+      end: 'Coruscant',
+      startPoint: Point.system,
+      endPoint: 'Coruscant',
+      startNodeId: Point.nodeId,
+      endNodeId: 85,
+      shortest: true
+    };
+    const pathUrlEnd = '/path';
+    const PostData = {
+      "to" : neo4jAccessUrl + '/db/data/node/' + JumpData.endNodeId,
+      "cost_property" : "length",
+      "relationships" : {
+        "type" : "HYPERSPACE_LANE"
+      },
+      "algorithm" : "dijkstra"
+    };
+    const pathUrl = neo4jAccessUrl + '/db/data/node/'  + JumpData.startNodeId + pathUrlEnd;
+    const SearchData = await http.post(pathUrl, PostData);
+    const connectedToCoruscant = !_.isEmpty(SearchData)
+    console.log("Coruscant connection: ", connectedToCoruscant);
+    return connectedToCoruscant;
+  } catch(err) {
+    console.log("Not connected to Coruscant");
+    return false;
+  }
+};
+
+
+async function pointConnectedToCsilla(Point) {
+  try {
+    console.log("\nChecking Csilla connection..", Point);
+    const JumpData = {
+      maxJumps: 120,
+      limit: 1,
+      start: Point.nodeSystem,
+      end: 'Csilla',
+      startPoint: Point.system,
+      endPoint: 'Csilla',
+      startNodeId: Point.nodeId,
+      endNodeId: 826,
+      shortest: true
+    };
+    const pathUrlEnd = '/path';
+    const PostData = {
+      "to" : neo4jAccessUrl + '/db/data/node/' + JumpData.endNodeId,
+      "cost_property" : "length",
+      "relationships" : {
+        "type" : "HYPERSPACE_LANE"
+      },
+      "algorithm" : "dijkstra"
+    };
+    const pathUrl = neo4jAccessUrl + '/db/data/node/'  + JumpData.startNodeId + pathUrlEnd;
+    const SearchData = await http.post(pathUrl, PostData);
+    const connectedToCsilla = !_.isEmpty(SearchData)
+    console.log("Csilla connection: ", connectedToCsilla);
+    return connectedToCsilla;
+  } catch(err) {
+    console.log("Not connected to Csilla");
+    return false;
   }
 };
 
@@ -471,7 +531,9 @@ const NeoController = {
   findShortestHyperspacePath: findShortestHyperspacePath,
   findManyHyperspacePaths: findManyHyperspacePaths,
   buildNeo4jDatabaseAsync: buildNeo4jDatabaseAsync,
-  testNeo4jDatabase: testNeo4jDatabase
+  testNeo4jDatabase: testNeo4jDatabase,
+  pointConnectedToCoruscant: pointConnectedToCoruscant,
+  pointConnectedToCsilla: pointConnectedToCsilla
 };
 
 

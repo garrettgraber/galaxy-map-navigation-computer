@@ -1,5 +1,5 @@
 class HyperSpaceNode {
-	constructor(system, lng, lat, hyperspaceLanes, nodeId, xGalacticLong, yGalacticLong) {
+	constructor(system, lng, lat, hyperspaceLanes, nodeId, xGalacticLong, yGalacticLong, geoHash) {
 		this.system = system;
 		this.lng = lng;
 		this.lat = lat;
@@ -7,6 +7,7 @@ class HyperSpaceNode {
 		this.nodeId = nodeId;
 		this.xGalacticLong = xGalacticLong;
 		this.yGalacticLong = yGalacticLong;
+		this.geoHash = geoHash;
 	}
 };
 
