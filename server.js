@@ -83,6 +83,26 @@ app.post('/hyperspace-jump/calc-shortest', function(req, res) {
 });
 
 
+app.post('/hyperspace-jump/calc-minimum-jumps', function(req, res) {
+	console.log("calculate hyperspace jump: ", req.body);
+	const JumpData = req.body;
+
+	NeoController.findShortestHyperspacePath(JumpData).then(StarPath => {
+		console.log("Shortest hyperspace paths results!!: ");
+			// res.sendStatus(200);
+
+		const ShortestJump = StarPath.paths[0];
+		const numberOfJumps = ShortestJump.numberOfJumps;
+
+		res.json(numberOfJumps);
+	}).catch(error => {
+		console.log("error: ", error);
+		res.sendStatus(500);
+	});
+});
+
+
+
 app.post('/hyperspace-jump/calc-many', function(req, res) {
 	console.log("calculate hyperspace jump: ", req.body);
 	const JumpData = req.body;
