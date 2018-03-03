@@ -356,8 +356,8 @@ async function findShortestHyperspacePath(JumpData) {
 
     CurrentHyperSpaceResultsStructure.hyperspaceSingleJump();
     const StarPathCreated = await CurrentHyperSpaceResultsStructure.generateStarPathCollection(db);
-    console.timeEnd('Shortest Jump Time')
-;    return StarPathCreated;
+    console.timeEnd('Shortest Jump Time');
+    return StarPathCreated;
   } catch(err) {
     console.log("error finding Shortest hyperspace path: ", err);
     throw new Error(400);
