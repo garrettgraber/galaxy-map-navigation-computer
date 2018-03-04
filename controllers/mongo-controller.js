@@ -81,7 +81,9 @@ const HyperspaceNodeSchema = new Schema({
   hyperspaceLanes: { type : Array , "default" : [] },
   nodeId         : { type : Number, "default" : null },
   loc            : { type : Array, "default" : [] },
-  geoHash        : String
+  geoHash        : String,
+  zoom					 : Number,
+  emptySpace     : Boolean
 });
 HyperspaceNodeSchema.set('autoIndex', true);
 HyperspaceNodeSchema.index({ loc: '2d' });

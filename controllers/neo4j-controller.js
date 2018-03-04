@@ -55,7 +55,7 @@ Promise.promisifyAll(db);
 
 async function insertHyperspaceNodeIntoGraphAsync(hyperspaceNode) {
   try {
-    // console.log("Inserting hyperspace lane: ", hyperspaceNode);
+    // console.log("Inserting hyperspace node zoom: ", hyperspaceNode.zoom);
     const nodeDataGeoHash = Geohash.encode(hyperspaceNode.lat, hyperspaceNode.lng, geoHashPrecision);
     const nodeDataInserted = await db.insertNodeAsync({
       system: hyperspaceNode.system,
@@ -64,7 +64,9 @@ async function insertHyperspaceNodeIntoGraphAsync(hyperspaceNode) {
       xGalacticLong: hyperspaceNode.xGalacticLong,
       yGalacticLong: hyperspaceNode.yGalacticLong,
       hyperspaceLanes: hyperspaceNode.hyperspaceLanes,
-      geoHash: nodeDataGeoHash
+      geoHash: nodeDataGeoHash,
+      zoom: hyperspaceNode.zoom,
+      emptySpace: hyperspaceNode.emptySpace
     });
 
     const nodeDataId = nodeDataInserted._id;

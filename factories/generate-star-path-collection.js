@@ -53,7 +53,9 @@ async function generateStarPathCollection(PathCollectionOptions, db) {
       Node._id,
       Node.xGalacticLong,
       Node.yGalacticLong,
-      Node.geoHash
+      Node.geoHash,
+      Node.zoom,
+      Node.emptySpace
     );
   });
   const StarPathCollection = new HyperSpacePathCollection(
