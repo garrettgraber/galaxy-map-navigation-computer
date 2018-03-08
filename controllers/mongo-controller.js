@@ -97,6 +97,8 @@ const CoordinateModel = mongoose.model('CoordinateModel', CoordinateSchema);
 
 const SectorSchema = new Schema({
 	name: String,
+	coordinates: { type : Array , "default" : [] },
+	link: { type : String , "default" : '' }
 });
 SectorSchema.set('autoIndex', true);
 const SectorModel = mongoose.model('SectorModel', SectorSchema);

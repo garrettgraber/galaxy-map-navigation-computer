@@ -460,6 +460,7 @@ async function findManyHyperspacePaths(JumpData) {
 
 async function buildNeo4jDatabaseAsync() {
   try {
+    console.time('Build Hyperspace Graph Database');
     await MongoController.connectToMongo();
     const errorBuildNodes = await buildHyperSpaceNodeGraph();
 
@@ -488,6 +489,7 @@ async function buildNeo4jDatabaseAsync() {
         console.log("nodesUploadedArray: ", nodesUploadedArray.length);
         console.log("nodesNotUploadedArray: ", nodesNotUploadedArray.length);
         console.log("undefined lanes: ", lastTenUndefinedLanes);
+        console.timeEnd('Build Hyperspace Graph Database');
 
         return true;
       }
