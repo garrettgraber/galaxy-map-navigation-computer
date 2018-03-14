@@ -18,7 +18,6 @@ const fs = require('fs'),
 const Planet = require('../data-classes/planet.js');
 const HyperSpaceLane = require('../data-classes/hyperspace-lane.js');
 const HyperSpacePath = require('../data-classes/hyperspace-path.js');
-// const HyperSpaceNode = require('../data-classes/hyperspace-node.js');
 const HyperSpacePathCollection = require('../data-classes/hyperspace-path-collection.js');
 const HyperSpaceResultsStructure = require('../data-classes/hyperspace-results-structure.js');
 const generateStarPathCollection = require('../factories/generate-star-path-collection.js');
@@ -63,6 +62,8 @@ async function insertHyperspaceNodeIntoGraphAsync(hyperspaceNode) {
       lat: hyperspaceNode.lat,
       xGalacticLong: hyperspaceNode.xGalacticLong,
       yGalacticLong: hyperspaceNode.yGalacticLong,
+      xGalactic: hyperspaceNode.xGalactic,
+      yGalactic: hyperspaceNode.yGalactic,
       hyperspaceLanes: hyperspaceNode.hyperspaceLanes,
       geoHash: nodeDataGeoHash,
       zoom: hyperspaceNode.zoom,

@@ -76,6 +76,8 @@ const HyperspaceNodeSchema = new Schema({
   system         : String,
   lng            : { type : Number , "default" : null },
   lat            : { type : Number , "default" : null },
+	xGalactic      : { type : Number , "default" : null },
+	yGalactic      : { type : Number , "default" : null },
   yGalacticLong  : { type : Number , "default" : null },
   xGalacticLong  : { type : Number , "default" : null },
   hyperspaceLanes: { type : Array , "default" : [] },

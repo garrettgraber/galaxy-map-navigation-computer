@@ -1,15 +1,17 @@
 class HyperSpaceNode {
-	constructor(system, lng, lat, hyperspaceLanes, nodeId, xGalacticLong, yGalacticLong, geoHash, zoom, emptySpace) {
-		this.system = system;
-		this.lng = lng;
-		this.lat = lat;
-		this.hyperspaceLanes = hyperspaceLanes;
-		this.nodeId = nodeId;
-		this.xGalacticLong = xGalacticLong;
-		this.yGalacticLong = yGalacticLong;
-		this.geoHash = geoHash;
-		this.zoom = zoom;
-		this.emptySpace = emptySpace;
+	constructor(Options) {
+		this.system = Options.system;
+		this.lng = Options.lng;
+		this.lat = Options.lat;
+		this.hyperspaceLanes = Options.hyperspaceLanes;
+		this.nodeId = Options.nodeId;
+		this.xGalacticLong = Options.xGalacticLong;
+		this.yGalacticLong = Options.yGalacticLong;
+		this.xGalactic = Options.xGalactic;
+		this.yGalactic = Options.yGalactic;
+		this.geoHash = Options.geoHash;
+		this.zoom = Options.zoom;
+		this.emptySpace = Options.emptySpace;
 	}
 };
 
