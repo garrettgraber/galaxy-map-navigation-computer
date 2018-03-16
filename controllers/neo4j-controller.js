@@ -371,6 +371,10 @@ async function findShortestHyperspacePath(JumpData) {
 async function pointConnectedToCoruscant(Point) {
   try {
     console.log("\nChecking Coruscant connection..", Point);
+    // const NodeData = await getCoruscantNodeId();
+
+    // console.log("Coruscant Node Data: ", NodeData);
+
     const JumpData = {
       maxJumps: 120,
       limit: 1,
@@ -379,7 +383,7 @@ async function pointConnectedToCoruscant(Point) {
       startPoint: Point.system,
       endPoint: 'Coruscant',
       startNodeId: Point.nodeId,
-      endNodeId: 85,
+      endNodeId: 71,
       shortest: true
     };
     const pathUrlEnd = '/path';
@@ -402,10 +406,33 @@ async function pointConnectedToCoruscant(Point) {
   }
 };
 
+async function getCsillaNodeId() {
+  try {
+    const response = await MongoController.findOneHyperspaceNodeAsync({system: 'Csilla'});
+    const NodeData = response.json();
+    return NodeData;
+  } catch(err) {
+    console.log("Error getting Csilla Node Data: ", err);
+  }
+}
+
+
+async function getCoruscantNodeId() {
+  try {
+    const response = await MongoController.findOneHyperspaceNodeAsync({system: 'Coruscant'});
+    const NodeData = response.json();
+    return NodeData;
+  } catch(err) {
+    console.log("Error getting Coruscant Node Data: ", err);
+  }
+}
+
 
 async function pointConnectedToCsilla(Point) {
   try {
     console.log("\nChecking Csilla connection..", Point);
+    // const NodeData = await getCsillaNodeId();
+    // console.log("Csilla Node Data: ", NodeData);
     const JumpData = {
       maxJumps: 120,
       limit: 1,
@@ -414,7 +441,7 @@ async function pointConnectedToCsilla(Point) {
       startPoint: Point.system,
       endPoint: 'Csilla',
       startNodeId: Point.nodeId,
-      endNodeId: 826,
+      endNodeId: 808,
       shortest: true
     };
     const pathUrlEnd = '/path';
@@ -428,6 +455,9 @@ async function pointConnectedToCsilla(Point) {
     };
     const pathUrl = neo4jAccessUrl + '/db/data/node/'  + JumpData.startNodeId + pathUrlEnd;
     const SearchData = await http.post(pathUrl, PostData);
+
+    console.log("SearchData: ", SearchData);
+
     const connectedToCsilla = !_.isEmpty(SearchData)
     console.log("Csilla connection: ", connectedToCsilla);
     return connectedToCsilla;
