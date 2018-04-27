@@ -227,18 +227,6 @@ function parseUriForIds(uri) {
   return parseInt( uriParsed[uriParsed.length - 1] );
 };
 
-function getPathData(pathResponseData) {
-  const PathObject = pathResponseData[0];
-  const distance = pathResponseData[1];
-  const relationships = PathObject.relationships;
-  const nodes = PathObject.nodes;
-  const start = PathObject.start;
-  const end = PathObject.end;
-  const length = PathObject.length;
-  const relationshipsIds = _.map(relationships, parseUriForIds);
-  const nodeIds = _.map(nodes, parseUriForIds);
-};
-
 function getLaneAndNodeIds(PathObject) {
   const relationshipsIds = _.map(PathObject.relationships, parseUriForIds);
   const nodeIds = _.map(PathObject.nodes, parseUriForIds);
