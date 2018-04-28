@@ -1,7 +1,6 @@
 const fs = require('fs'),
 	_ = require('lodash'),
   Promise = require('bluebird'),
-  // neo4j = require('neo4j-driver').v1,
   nodeNeo4j = require('node-neo4j'),
   http = require('request-promise-json'),
   neo4j = require('neo4j'),
@@ -54,7 +53,6 @@ Promise.promisifyAll(db);
 
 async function insertHyperspaceNodeIntoGraphAsync(hyperspaceNode) {
   try {
-    // console.log("Inserting hyperspace node zoom: ", hyperspaceNode.zoom);
     const nodeDataGeoHash = Geohash.encode(hyperspaceNode.lat, hyperspaceNode.lng, geoHashPrecision);
     const nodeDataInserted = await db.insertNodeAsync({
       system: hyperspaceNode.system,
@@ -81,11 +79,12 @@ async function insertHyperspaceNodeIntoGraphAsync(hyperspaceNode) {
 
     if(nodeDataId === 0) { zeroNodesArray.push(hyperspaceNode.system) }
     const lablesAddedData = await db.addLabelsToNodeAsync(nodeDataId, 'Hyperspace_Node');
-    return await MongoController.findHyperspaceNodeAndUpdate({
-      geoHash: nodeDataGeoHash
-    }, {
-      nodeId: nodeDataId
-    });
+    if(hyperspaceNode.nodeId === nodeDataId) {
+      return true;
+    } else {
+      console.log("Node mis-match: ", hyperspaceNode.system);
+      return false;
+    }
   } catch(err) {
     console.log("error inserting hyperspace node: ", err);
     throw new Error(err);
@@ -94,7 +93,6 @@ async function insertHyperspaceNodeIntoGraphAsync(hyperspaceNode) {
 
 async function insertHyperspaceLaneIntoGraphAsync(hyperspaceLane) {
   try {
-    // console.log("hyperspaceLane: ", hyperspaceLane);
     const startNodeData = await MongoController.findOneHyperspaceNodeAsync({
       lng: hyperspaceLane.startCoordsLngLat[0],
       lat: hyperspaceLane.startCoordsLngLat[1]
@@ -105,11 +103,6 @@ async function insertHyperspaceLaneIntoGraphAsync(hyperspaceLane) {
     });
     const startNode = (startNodeData === null)? {status:false, doc:null} : {status:true, doc:startNodeData};
     const endNode = (endNodeData === null)? {status:false, doc:null} : {status:true, doc:endNodeData};
-    // console.log("\nresults: ", results);
-    // const startNode = results[0];
-    // const endNode = results[1];
-    // console.log("start Node: ", startNode);
-    // console.log("end Node: ", endNode);
     if(startNode.status && endNode.status) {
       const LaneData = {
         name: hyperspaceLane.name,
@@ -159,8 +152,18 @@ async function buildHyperSpaceNodeGraph() {
   try {
     console.log("buildHyperSpaceNodeGraph has fired!");
     const nodesFound = await MongoController.getAllHyperspaceNodes();
-    const nodeGraphResults = await generateHyperSpaceNodeGraphAsync(nodesFound);
-    return null;
+    const nodesSorted = _.orderBy(nodesFound, ['system'], ['asc']);
+    const nodeGraphResults = await generateHyperSpaceNodeGraphAsync(nodesSorted);
+    let nodeGraphResultsSimplified = _.uniq(nodeGraphResults);
+
+    if(nodeGraphResultsSimplified.indexOf(false) > -1) {
+      console.log("Node Id Integrity failure");
+      return false;
+    } else {
+      console.log("Node Id Integrity Success");
+      return true;
+    }
+
   } catch(err) {
     console.log("error building hyperspace node graph: ", err);
   }
@@ -289,7 +292,6 @@ function formatHypespaceResultsData(cypherResult) {
     console.log("CurrentHyperSpaceResultsStructure: ", CurrentHyperSpaceResultsStructure);
     console.log("Distance: ", CurrentHyperSpaceResultsStructure.distance);
     console.log("Total Jumps: ", CurrentHyperSpaceResultsStructure.totalJumps());
-
 
     hyperspaceRoutes.push(CurrentHyperSpaceResultsStructure.lanes);
     hyperspaceRoutesNodes.push(CurrentHyperSpaceResultsStructure.nodes);
@@ -449,10 +451,10 @@ async function buildNeo4jDatabaseAsync() {
   try {
     console.time('Build Hyperspace Graph Database');
     await MongoController.connectToMongo();
-    const errorBuildNodes = await buildHyperSpaceNodeGraph();
+    const nodeIdIntegrity = await buildHyperSpaceNodeGraph();
 
-    if(errorBuildNodes) {
-      throw new Error(errorBuildNodes);
+    if(!nodeIdIntegrity) {
+      throw new Error("Node Id Integrity failure");
     } else {
       console.log("Success building hyperspace node database!!!");
       const errorBuildLanes = await buildHyperSpaceLaneGraph();
