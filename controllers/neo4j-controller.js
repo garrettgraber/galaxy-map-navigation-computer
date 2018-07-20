@@ -346,6 +346,11 @@ async function findShortestHyperspacePath(JumpData) {
 
     CurrentHyperSpaceResultsStructure.hyperspaceSingleJump();
     const StarPathCreated = await CurrentHyperSpaceResultsStructure.generateStarPathCollection(db);
+
+    
+
+    console.log("StarPathCreated: ", Object.keys(StarPathCreated));
+
     console.timeEnd('Shortest Jump Time');
     return StarPathCreated;
   } catch(err) {
@@ -353,6 +358,30 @@ async function findShortestHyperspacePath(JumpData) {
     throw new Error(400);
   }
 };
+
+
+
+function findJumpCoordinatesById(jumpId, lanesArray) {
+  const JumpFound = _.find(lanesArray, (n) => { return n._id === jumpId || n._id === -jumpId });
+  if(JumpFound) {
+    const foundId = JumpFound._id;
+    const coordinatesSlice = JumpFound.coordinates.slice();
+    if(!jumpIdSignsMatch(jumpId, foundId)) {
+      return coordinatesSlice.reverse();
+    } else {
+      return coordinatesSlice.slice();
+    }
+  } else {
+    return [];
+  }
+};
+
+function jumpIdSignsMatch(searchId, foundId) {
+  return Math.abs(searchId) === foundId && searchId === foundId;
+};
+
+
+
 
 async function pointConnectedToCoruscant(Point) {
   try {
