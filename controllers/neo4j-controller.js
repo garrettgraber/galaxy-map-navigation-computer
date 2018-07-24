@@ -361,6 +361,7 @@ async function findShortestHyperspacePath(JumpData) {
 
 
 
+
 function findJumpCoordinatesById(jumpId, lanesArray) {
   const JumpFound = _.find(lanesArray, (n) => { return n._id === jumpId || n._id === -jumpId });
   if(JumpFound) {
