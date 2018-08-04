@@ -49,7 +49,7 @@ const neo4jAccessUrl = "http://" + graphDatabaseHostname + ":7474";
 db = new nodeNeo4j(neo4jUrl);
 Promise.promisifyAll(db);
 
-
+console.log("db: ", db);
 
 async function insertHyperspaceNodeIntoGraphAsync(hyperspaceNode) {
   try {
@@ -316,25 +316,34 @@ function formatHypespaceResultsData(cypherResult) {
 
 async function findShortestHyperspacePath(JumpData) {
   try {
+
+    const newStartNodeId = await getStartingNodeId(JumpData.startNodeId, JumpData.endNodeId);
+    const newEndNodeId = await getStartingNodeId(JumpData.endNodeId, newStartNodeId);
+
     console.time('Shortest Jump Time');
     const MaxNavigationJumps = 120;
     JumpData.maxJumps = MaxNavigationJumps;
     console.log("JumpData: ", JumpData);
+    console.log("Start Node: ", newStartNodeId);
+    console.log("End Node: ", newEndNodeId);
     const pathUrlEnd = '/path';
     const PostData = {
-      "to" : neo4jAccessUrl + '/db/data/node/' + JumpData.endNodeId,
+      "to" : neo4jAccessUrl + '/db/data/node/' + newEndNodeId,
       "cost_property" : "length",
       "relationships" : {
         "type" : "HYPERSPACE_LANE"
       },
       "algorithm" : "dijkstra"
     };
-    const pathUrl = neo4jAccessUrl + '/db/data/node/'  + JumpData.startNodeId + pathUrlEnd;
+
+    const pathUrl = neo4jAccessUrl + '/db/data/node/'  + newStartNodeId + pathUrlEnd;
     const SearchData = await http.post(pathUrl, PostData);
     const lanes = _.map(SearchData.relationships, parseUriForIds);
     const nodes = _.map(SearchData.nodes, parseUriForIds);
     const start = parseUriForIds(SearchData.start);
     const end = parseUriForIds(SearchData.end);
+
+    console.log("SearchData: ", SearchData);
 
     const CurrentHyperSpaceResultsStructure = new HyperSpaceResultsStructure(
       start,
@@ -360,6 +369,122 @@ async function findShortestHyperspacePath(JumpData) {
 };
 
 
+async function getStartingNodeId(nodeOneId, nodeTwoId) {
+  try {
+
+    if(isNaN(nodeOneId)) {
+
+      const pseudoNodeArray = nodeOneId.split('-');
+
+
+      const startNodeId = parseInt(pseudoNodeArray[1]);
+      const endNodeId = parseInt(pseudoNodeArray[2]);
+
+      const nodeTwoIdUsed = getNodeIdOrFirstId(nodeTwoId);
+
+      const firstJumpDistance = await distanceBetweenJumpNodes(startNodeId, nodeTwoIdUsed);
+      const secondJumpDistane = await distanceBetweenJumpNodes(endNodeId, nodeTwoIdUsed);
+
+
+      console.log("firstJumpDistance: ", firstJumpDistance);
+      console.log("secondJumpDistane: ", secondJumpDistane);
+
+      if(firstJumpDistance > secondJumpDistane) {
+        return endNodeId;
+      } else {
+        return startNodeId;
+      }
+
+    } else {
+      return nodeOneId;
+    }
+  } catch(err) {
+    console.log("error get start node Id: ", err);
+  }
+};
+
+
+
+async function getEndNodeId(nodeOneId, nodeTwoId) {
+  try {
+
+    if(isNaN(nodeTwoId)) {
+
+      const pseudoNodeArray = nodeTwoId.split('-');
+
+      const laneStartNodeHash = pseudoNodeArray[1];
+      const laneEndNodeHash = pseudoNodeArray[2];
+
+      const laneStartNode = Geohash.decode(laneStartNodeHash);
+      const laneEndNode = Geohash.decode(laneEndNodeHash);
+
+      console.log("laneStartNode: ", laneStartNode);
+      console.log("laneEndNode: ", laneEndNode);
+
+      const pseudoNodeArray = nodeTwoId.split('-');
+
+
+      const startNodeId = parseInt(pseudoNodeArray[1]);
+      const endNodeId = parseInt(pseudoNodeArray[2]);
+
+      const nodeOneIdUsed = getNodeIdOrFirstId(nodeOneId);
+
+      const firstJumpDistance = await distanceBetweenJumpNodes(startNodeId, nodeOneIdUsed);
+      const secondJumpDistane = await distanceBetweenJumpNodes(endNodeId, nodeOneIdUsed);
+
+
+      console.log("firstJumpDistance: ", firstJumpDistance);
+      console.log("secondJumpDistane: ", secondJumpDistane);
+
+      if(firstJumpDistance > secondJumpDistane) {
+        return endNodeId;
+      } else {
+        return startNodeId;
+      }
+
+
+
+
+    } else {
+      return nodeTwoId;
+    }
+  } catch(err) {
+    console.log("error get start node Id: ", err);
+  }
+};
+
+
+async function distanceBetweenJumpNodes(nodeOneId, nodeTwoId) {
+  try {
+    const pathUrlEnd = '/path';
+    const PostData = {
+      "to" : neo4jAccessUrl + '/db/data/node/' + nodeTwoId,
+      "cost_property" : "length",
+      "relationships" : {
+        "type" : "HYPERSPACE_LANE"
+      },
+      "algorithm" : "dijkstra"
+    };
+    const pathUrl = neo4jAccessUrl + '/db/data/node/'  + nodeOneId + pathUrlEnd;
+    const SearchData = await http.post(pathUrl, PostData);
+    return SearchData.weight;
+  } catch(err) {
+    console.log("error getting distance between nodes: ", err);
+    throw new Error(400);
+  }
+};
+
+
+function getNodeIdOrFirstId(nodeIdValue) {
+  console.log("nodeIdValue: ", nodeIdValue);
+  if(isNaN(nodeIdValue)) {
+    const pseudoNodeArray = nodeIdValue.split('-');
+    const startNodeId = parseInt(pseudoNodeArray[1]);
+    return startNodeId;
+  } else {
+    return nodeIdValue;
+  }
+};
 
 
 function findJumpCoordinatesById(jumpId, lanesArray) {
