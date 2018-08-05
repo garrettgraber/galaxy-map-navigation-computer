@@ -20,6 +20,7 @@ const HyperSpacePath = require('../data-classes/hyperspace-path.js');
 const HyperSpacePathCollection = require('../data-classes/hyperspace-path-collection.js');
 const HyperSpaceResultsStructure = require('../data-classes/hyperspace-results-structure.js');
 const generateStarPathCollection = require('../factories/generate-star-path-collection.js');
+const HyperSpacePseudoNode = require('../data-classes/hyperspace-pseudo-node.js');
 const DatabaseLinks = require('docker-links').parseLinks(process.env);
 const MongoController = require('./mongo-controller.js');
 
@@ -48,8 +49,6 @@ const neo4jAccessUrl = "http://" + graphDatabaseHostname + ":7474";
 
 db = new nodeNeo4j(neo4jUrl);
 Promise.promisifyAll(db);
-
-console.log("db: ", db);
 
 async function insertHyperspaceNodeIntoGraphAsync(hyperspaceNode) {
   try {
@@ -317,6 +316,9 @@ function formatHypespaceResultsData(cypherResult) {
 async function findShortestHyperspacePath(JumpData) {
   try {
 
+    const startIsPseudoNode = (isNaN(JumpData.startNodeId))? true : false;
+    const endIsPseudoNode = (isNaN(JumpData.endNodeId))? true : false;
+
     const newStartNodeId = await getStartingNodeId(JumpData.startNodeId, JumpData.endNodeId);
     const newEndNodeId = await getStartingNodeId(JumpData.endNodeId, newStartNodeId);
 
@@ -343,7 +345,83 @@ async function findShortestHyperspacePath(JumpData) {
     const start = parseUriForIds(SearchData.start);
     const end = parseUriForIds(SearchData.end);
 
-    console.log("SearchData: ", SearchData);
+    // console.log("SearchData: ", SearchData);
+
+    if(startIsPseudoNode) {
+      const startPseudoNode = JumpData.startNodeId;
+      console.log("startPseudoNode: ",  startPseudoNode);
+
+      const startNodeId = nodes[0];
+      const secondNodeId = nodes[1];
+
+      const nodeLocationHash = startPseudoNode.split('-')[3];
+
+      const PseudoNodeLocation = Geohash.decode(nodeLocationHash);
+
+      console.log("Start PseudoNodeLocation: ", PseudoNodeLocation);
+
+      const startLaneId = lanes[0];
+
+      const StartLaneFound = await findLaneByIdAsync(startLaneId);
+
+      console.log("Start Lane Found: ", StartLaneFound);
+
+      const pseudoStartNodeId = randomPseudoNodeId();
+
+
+
+      const PseudoStartNode = new HyperSpacePseudoNode({
+        lng: PseudoNodeLocation.lon,
+        lat: PseudoNodeLocation.lat,
+        hyperspaceLanes: StartLaneFound.name,
+        nodeId: pseudoStartNodeId,
+        system : startPseudoNode,
+      });
+
+      console.log("PseudoStartNode: ", PseudoStartNode);
+
+
+    }
+
+    if(endIsPseudoNode) {
+      const endPseudoNode = JumpData.endNodeId;
+      console.log("endPseudoNode: ", endPseudoNode);
+      const endNodeId = nodes[nodes.length - 1];
+      const nextToLastId = nodes[nodes.length - 2];
+
+
+      const nodeLocationHash = endPseudoNode.split('-')[3];
+
+      const PseudoNodeLocation = Geohash.decode(nodeLocationHash);
+
+      console.log("End PseudoNodeLocation: ", PseudoNodeLocation);
+
+
+      const endLaneId = lanes[lanes.length - 1];
+
+      const EndLaneFound = await findLaneByIdAsync(endLaneId);
+
+      console.log("End Lane Found: ", EndLaneFound);
+
+      const pseudoEndNodeId = randomPseudoNodeId();
+
+
+      const PseudoEndNode = new HyperSpacePseudoNode({
+        lng: PseudoNodeLocation.lon,
+        lat: PseudoNodeLocation.lat,
+        hyperspaceLanes: EndLaneFound.name,
+        nodeId: pseudoEndNodeId,
+        system : endPseudoNode,
+      });
+
+      console.log("PseudoEndNode: ", PseudoEndNode);
+
+    }
+
+    console.log("start: ", start);
+    console.log("end: ", end);
+    console.log("lanes: ", lanes);
+    console.log("nodes: ", nodes);
 
     const CurrentHyperSpaceResultsStructure = new HyperSpaceResultsStructure(
       start,
@@ -357,6 +435,8 @@ async function findShortestHyperspacePath(JumpData) {
     const StarPathCreated = await CurrentHyperSpaceResultsStructure.generateStarPathCollection(db);
 
     
+    console.log("StarPathCreated: ", StarPathCreated);
+
 
     console.log("StarPathCreated: ", Object.keys(StarPathCreated));
 
@@ -368,6 +448,8 @@ async function findShortestHyperspacePath(JumpData) {
   }
 };
 
+
+function randomPseudoNodeId() { return Math.floor(Math.random()*90000) + 10000; }
 
 async function getStartingNodeId(nodeOneId, nodeTwoId) {
   try {
@@ -389,7 +471,7 @@ async function getStartingNodeId(nodeOneId, nodeTwoId) {
       console.log("firstJumpDistance: ", firstJumpDistance);
       console.log("secondJumpDistane: ", secondJumpDistane);
 
-      if(firstJumpDistance > secondJumpDistane) {
+      if(firstJumpDistance < secondJumpDistane) {
         return endNodeId;
       } else {
         return startNodeId;
