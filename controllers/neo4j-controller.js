@@ -21,6 +21,8 @@ const HyperSpacePathCollection = require('../data-classes/hyperspace-path-collec
 const HyperSpaceResultsStructure = require('../data-classes/hyperspace-results-structure.js');
 const generateStarPathCollection = require('../factories/generate-star-path-collection.js');
 const HyperSpacePseudoNode = require('../data-classes/hyperspace-pseudo-node.js');
+const HyperSpacePseudoLane = require('../data-classes/hyperspace-pseudo-lane.js');
+
 const DatabaseLinks = require('docker-links').parseLinks(process.env);
 const MongoController = require('./mongo-controller.js');
 
@@ -319,18 +321,23 @@ async function findShortestHyperspacePath(JumpData) {
     const startIsPseudoNode = (isNaN(JumpData.startNodeId))? true : false;
     const endIsPseudoNode = (isNaN(JumpData.endNodeId))? true : false;
 
-    const newStartNodeId = await getStartingNodeId(JumpData.startNodeId, JumpData.endNodeId);
-    const newEndNodeId = await getStartingNodeId(JumpData.endNodeId, newStartNodeId);
+    const exteriorStartNodeId = await getExteriorJumpNodeIds(JumpData.startNodeId, JumpData.endNodeId);
+    const exteriorEndNodeId = await getExteriorJumpNodeIds(JumpData.endNodeId, exteriorStartNodeId);
+
+    const interiorStartNodeId = await getInteriorJumpNodeIds(JumpData.startNodeId, JumpData.endNodeId);
+    const interiorEndNodeId = await getInteriorJumpNodeIds(JumpData.endNodeId, interiorStartNodeId);
 
     console.time('Shortest Jump Time');
     const MaxNavigationJumps = 120;
     JumpData.maxJumps = MaxNavigationJumps;
     console.log("JumpData: ", JumpData);
-    console.log("Start Node: ", newStartNodeId);
-    console.log("End Node: ", newEndNodeId);
+    console.log("Exterior Start Node: ", exteriorStartNodeId);
+    console.log("Exterior End Node: ", exteriorEndNodeId);
+    console.log("Interior Start Node: ", interiorStartNodeId);
+    console.log("Interior End Node: ", interiorEndNodeId);
     const pathUrlEnd = '/path';
     const PostData = {
-      "to" : neo4jAccessUrl + '/db/data/node/' + newEndNodeId,
+      "to" : neo4jAccessUrl + '/db/data/node/' + exteriorEndNodeId,
       "cost_property" : "length",
       "relationships" : {
         "type" : "HYPERSPACE_LANE"
@@ -338,7 +345,7 @@ async function findShortestHyperspacePath(JumpData) {
       "algorithm" : "dijkstra"
     };
 
-    const pathUrl = neo4jAccessUrl + '/db/data/node/'  + newStartNodeId + pathUrlEnd;
+    const pathUrl = neo4jAccessUrl + '/db/data/node/'  + exteriorStartNodeId + pathUrlEnd;
     const SearchData = await http.post(pathUrl, PostData);
     const lanes = _.map(SearchData.relationships, parseUriForIds);
     const nodes = _.map(SearchData.nodes, parseUriForIds);
@@ -366,19 +373,25 @@ async function findShortestHyperspacePath(JumpData) {
 
       console.log("Start Lane Found: ", StartLaneFound);
 
-      const pseudoStartNodeId = randomPseudoNodeId();
-
-
-
       const PseudoStartNode = new HyperSpacePseudoNode({
         lng: PseudoNodeLocation.lon,
         lat: PseudoNodeLocation.lat,
         hyperspaceLanes: StartLaneFound.name,
-        nodeId: pseudoStartNodeId,
         system : startPseudoNode,
       });
 
       console.log("PseudoStartNode: ", PseudoStartNode);
+
+      const PseudoStartLane = new HyperSpacePseudoLane({
+        OriginalLane: StartLaneFound,
+        PseudoNode: PseudoStartNode,
+        interiorNodeId: interiorStartNodeId,
+        exteriorNodeId: exteriorStartNodeId,
+        isStartLane: true,
+        isEndLane: false
+      });
+
+      console.log("PseudoStartLane: ", PseudoStartLane);
 
 
     }
@@ -403,18 +416,28 @@ async function findShortestHyperspacePath(JumpData) {
 
       console.log("End Lane Found: ", EndLaneFound);
 
-      const pseudoEndNodeId = randomPseudoNodeId();
-
 
       const PseudoEndNode = new HyperSpacePseudoNode({
         lng: PseudoNodeLocation.lon,
         lat: PseudoNodeLocation.lat,
         hyperspaceLanes: EndLaneFound.name,
-        nodeId: pseudoEndNodeId,
         system : endPseudoNode,
       });
 
       console.log("PseudoEndNode: ", PseudoEndNode);
+
+
+      const PseudoEndLane = new HyperSpacePseudoLane({
+        OriginalLane: EndLaneFound,
+        PseudoNode: PseudoEndNode,
+        interiorNodeId: interiorEndNodeId,
+        exteriorNodeId: exteriorEndNodeId,
+        isStartLane: false,
+        isEndLane: true
+      });
+
+      console.log("PseudoEndLane: ", PseudoEndLane);
+
 
     }
 
@@ -435,7 +458,7 @@ async function findShortestHyperspacePath(JumpData) {
     const StarPathCreated = await CurrentHyperSpaceResultsStructure.generateStarPathCollection(db);
 
     
-    console.log("StarPathCreated: ", StarPathCreated);
+    // console.log("StarPathCreated: ", StarPathCreated);
 
 
     console.log("StarPathCreated: ", Object.keys(StarPathCreated));
@@ -449,24 +472,18 @@ async function findShortestHyperspacePath(JumpData) {
 };
 
 
-function randomPseudoNodeId() { return Math.floor(Math.random()*90000) + 10000; }
 
-async function getStartingNodeId(nodeOneId, nodeTwoId) {
+async function getExteriorJumpNodeIds(nodeOneId, nodeTwoId) {
   try {
 
     if(isNaN(nodeOneId)) {
 
       const pseudoNodeArray = nodeOneId.split('-');
-
-
       const startNodeId = parseInt(pseudoNodeArray[1]);
       const endNodeId = parseInt(pseudoNodeArray[2]);
-
       const nodeTwoIdUsed = getNodeIdOrFirstId(nodeTwoId);
-
       const firstJumpDistance = await distanceBetweenJumpNodes(startNodeId, nodeTwoIdUsed);
       const secondJumpDistane = await distanceBetweenJumpNodes(endNodeId, nodeTwoIdUsed);
-
 
       console.log("firstJumpDistance: ", firstJumpDistance);
       console.log("secondJumpDistane: ", secondJumpDistane);
@@ -484,6 +501,35 @@ async function getStartingNodeId(nodeOneId, nodeTwoId) {
     console.log("error get start node Id: ", err);
   }
 };
+
+async function getInteriorJumpNodeIds(nodeOneId, nodeTwoId) {
+  try {
+
+    if(isNaN(nodeOneId)) {
+
+      const pseudoNodeArray = nodeOneId.split('-');
+      const startNodeId = parseInt(pseudoNodeArray[1]);
+      const endNodeId = parseInt(pseudoNodeArray[2]);
+      const nodeTwoIdUsed = getNodeIdOrFirstId(nodeTwoId);
+      const firstJumpDistance = await distanceBetweenJumpNodes(startNodeId, nodeTwoIdUsed);
+      const secondJumpDistane = await distanceBetweenJumpNodes(endNodeId, nodeTwoIdUsed);
+
+      console.log("firstJumpDistance: ", firstJumpDistance);
+      console.log("secondJumpDistane: ", secondJumpDistane);
+
+      if(firstJumpDistance > secondJumpDistane) {
+        return endNodeId;
+      } else {
+        return startNodeId;
+      }
+
+    } else {
+      return nodeOneId;
+    }
+  } catch(err) {
+    console.log("error get start node Id: ", err);
+  }
+}
 
 
 

@@ -3,7 +3,6 @@ class HyperSpacePseudoNode {
     this.lng = Options.lng,
     this.lat = Options.lat,
     this.hyperspaceLanes = Options.hyperspaceLanes,
-    this.nodeId = Options.nodeId,
     this.system = Options.system;
 
     const xGalactic = getGalacticXFromLongitude(this.lng);
@@ -18,6 +17,8 @@ class HyperSpacePseudoNode {
 
     this.zoom = 5;
     this.emptySpace = true;
+
+    this.nodeId = randomPseudoNodeId();
   }
 };
 
@@ -30,6 +31,9 @@ function getGalacticYFromLatitude(latitude) {
 function getGalacticXFromLongitude(longitude) {
   return (111.3194866138503 * longitude);
 };
+
+function randomPseudoNodeId() { return Math.floor(Math.random()*90000) + 10000; }
+
 
 
 module.exports = HyperSpacePseudoNode;
