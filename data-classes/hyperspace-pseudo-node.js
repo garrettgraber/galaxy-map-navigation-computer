@@ -2,7 +2,7 @@ class HyperSpacePseudoNode {
   constructor(Options) {
     this.lng = Options.lng,
     this.lat = Options.lat,
-    this.hyperspaceLanes = Options.hyperspaceLanes,
+    this.hyperspaceLanes = [Options.hyperspaceLanes],
     this.system = Options.system;
 
     const xGalactic = getGalacticXFromLongitude(this.lng);

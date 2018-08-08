@@ -41,7 +41,7 @@ class HyperSpacePath {
 			const end = this.nodes[i + 1];
 			if(start !== JumpLane._start) {
 				reverseLanesSet.add(JumpLane._id);
-				this.jumps[i] = -(JumpLane._id);
+				this.jumps[i] =  (JumpLane._id > 2000)? (JumpLane._id) : -(JumpLane._id);
 			} else {
 				correctLanesSet.add(JumpLane._id);
 			}
@@ -77,7 +77,7 @@ class HyperSpacePath {
 				const firstCoordinates = JumpLane.coordinates[0];
 				const secondCoordinates = JumpLane.coordinates[JumpLane.coordinates.length - 1];
 				const startSystemIsInvalid = StartNode.system !== JumpLane.start;
-				const endSystemIsInvalid =EndNode.system !== JumpLane.end;
+				const endSystemIsInvalid = EndNode.system !== JumpLane.end;
 				const startCoordsLngLatIsInvalid = !_.isEqual(jumpStartCoordinates, firstCoordinates);
 				const endCoordsLngLatIsInvalid = !_.isEqual(jumpEndCoordinates, secondCoordinates);
 				

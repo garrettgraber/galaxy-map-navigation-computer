@@ -12,7 +12,15 @@ class HyperSpacePseudoLane {
 		const originalEndId = OriginalHyperspaceLane._end;
 		const coordinates = this.coordinateStringToArray(OriginalHyperspaceLane.coordinates);
 
+		// const coordinates = OriginalHyperspaceLane.coordinates;
+
 		const PseudoNode = Options.PseudoNode;
+
+
+
+		const pseudoNodeCutIndex = parseInt(PseudoNode.system.split('-')[4]);
+
+		console.log("pseudoNodeCutIndex: ", pseudoNodeCutIndex);
 		const pseudoNodeLocation = [PseudoNode.lng, PseudoNode.lat];
 		const interiorNodeId = Options.interiorNodeId;
 		const exteriorNodeId = Options.exteriorNodeId;
@@ -24,10 +32,8 @@ class HyperSpacePseudoLane {
 		this.name = OriginalHyperspaceLane.name;
 		this.hyperspaceHash = uuidv4();
 
-		const slicedCoordinates = this.insertPseudoNodeCoordinates(pseudoNodeLocation, directionAdjustedCoordinates, isStartLane);
+		const slicedCoordinates = this.insertPseudoNodeCoordinates(pseudoNodeLocation, coordinates, pseudoNodeCutIndex, laneIsReversed, isStartLane);
 		this.coordinates = slicedCoordinates;
-
-
 
 
 		console.log("lane is reversed: ",  laneIsReversed);
@@ -76,7 +82,10 @@ class HyperSpacePseudoLane {
 		if(Array.isArray(coordinates)) {
 			return coordinates;
 		} else {
+			console.log("coordinates are not an Array: ", coordinates);
 			let jsonJumpCoordinates = JSON.parse("[" + coordinates + "]");
+			console.log("jsonJumpCoordinates: ", jsonJumpCoordinates[0]);
+			console.log("coordinates type: ", typeof jsonJumpCoordinates[0]);
 			return jsonJumpCoordinates[0];			
 		}
 	}
@@ -85,7 +94,7 @@ class HyperSpacePseudoLane {
 		return coordinates.slice().reverse();
 	}
 
-	insertPseudoNodeCoordinates(pseudoNodeCoordinates, originalCoordinates, isStartLane) {
+	insertPseudoNodeCoordinates(pseudoNodeCoordinates, originalCoordinates, pseudoNodeCutIndex, laneIsReversed, isStartLane) {
 
 		console.log("insertPseudoNodeCoordinates has fired: ", pseudoNodeCoordinates);
 		console.log("originalCoordinates: ",  originalCoordinates);
@@ -93,44 +102,105 @@ class HyperSpacePseudoLane {
 		const pseudoNodeLongitude = pseudoNodeCoordinates[0];
 		const pseudoNodeLatitude = pseudoNodeCoordinates[1];
 
-		for(let i=1; i < originalCoordinates.length; i++) {
-			const previousCoordinates = originalCoordinates[i - 1];
-			const currentCoordinates = originalCoordinates[i];
-
-			const previousLongitude = previousCoordinates[0];
-			const previousLatitude = previousCoordinates[1];
-
-			const currentLongitude = currentCoordinates[0];
-			const currentLatitude = currentCoordinates[1];
-
-			const pseudoNodeLongitudeIncreasing = (previousLongitude < pseudoNodeLongitude && pseudoNodeLongitude < currentLongitude)? true : false;
-			const pseudoNodeLongitudeDecreasing = (previousLongitude > pseudoNodeLongitude && pseudoNodeLongitude > currentLongitude)? true : false;
-			const pseudoNodeLongitudeBetweenPoints = (pseudoNodeLongitudeIncreasing || pseudoNodeLongitudeDecreasing)? true : false;
-
-			const pseudoNodeLatitudeIncreasing = (previousLatitude < pseudoNodeLatitude && pseudoNodeLatitude < currentLatitude)? true : false;
-			const pseudoNodeLatitudeDecreasing = (previousLatitude > pseudoNodeLatitude && pseudoNodeLatitude > currentLatitude)? true : false;
-			const pseudoNodeLatitudeBetweenPoints = (pseudoNodeLatitudeIncreasing || pseudoNodeLatitudeDecreasing)? true : false;
+		const slicedIndexUsed = (laneIsReversed)? originalCoordinates.length - pseudoNodeCutIndex - 1 : pseudoNodeCutIndex;
 
 
+		const laneSlice = (isStartLane)?
+			(laneIsReversed)?
+				originalCoordinates.slice(0, pseudoNodeCutIndex).reverse() : // reversed start lane
+				originalCoordinates.slice(pseudoNodeCutIndex + 1): // regular start lane
+			(laneIsReversed)?
+				originalCoordinates.slice(pseudoNodeCutIndex + 2).reverse() : // reversed end lane
+				originalCoordinates.slice(0, pseudoNodeCutIndex) // regular end lane
+		;
 
-			if(pseudoNodeLongitudeBetweenPoints || pseudoNodeLatitudeBetweenPoints) {
-				console.log("Current index: ", i - 1);
-				console.log("Pseudo Node insertion index found: ", currentCoordinates);
+		if(isStartLane) {
+			laneSlice.unshift(pseudoNodeCoordinates);
+		} else {
+			laneSlice.push(pseudoNodeCoordinates);
+		}
 
-				const laneSlice = (isStartLane)? originalCoordinates.slice(i) : originalCoordinates.slice(0, i);
+		return laneSlice;
 
-				if(isStartLane) {
-					laneSlice.unshift(pseudoNodeCoordinates);
-				} else {
-					laneSlice.push(pseudoNodeCoordinates);
-				}
+
+
+		// for(let i=1; i < originalCoordinates.length - 1; i++) {
+		// 	const previousCoordinates = originalCoordinates[i - 1];
+		// 	const currentCoordinates = originalCoordinates[i];
+		// 	const nextCoordinates = originalCoordinates[i + 1];
+
+		// 	const previousLongitude = previousCoordinates[0];
+		// 	const previousLatitude = previousCoordinates[1];
+
+		// 	const currentLongitude = currentCoordinates[0];
+		// 	const currentLatitude = currentCoordinates[1];
+
+		// 	const nextLongitude = nextCoordinates[0];
+		// 	const nextLatitude = nextCoordinates[1];
+
+		// 	const previousLongitudeLessThanCurrent = (previousLongitude < currentLongitude && currentLongitude < nextLongitude)? true : false;
+		// 	const previousLongitudeGreaterThanCurrent = (previousLongitude > currentLongitude && currentLongitude > nextLongitude)? true : false;
+
+		// 	const previousLatitudeLessThanCurrent = (previousLatitude < currentLatitude && currentLatitude < nextLatitude)? true : false;
+		// 	const previousLatitudeGreaterThanCurrent = (previousLatitude > currentLatitude && currentLatitude > nextLatitude)? true : false;
+
+
+
+
+		// 	// const pseudoNodeLongitudeIncreasing = (previousLongitude < pseudoNodeLongitude && pseudoNodeLongitude < currentLongitude)? true : false;
+
+		// 	const pseudoNodeLongitudeIncreasing = (previousLongitude < pseudoNodeLongitude && pseudoNodeLongitude < currentCoordinates)? true : false;
+		// 	const pseudoNodeLongitudeDecreasing = (previousLongitude > pseudoNodeLongitude && pseudoNodeLongitude > currentCoordinates)? true : false;
+
+
+		// 	const pseudoNodeLongitudeBetweenPointsIncreasing = (previousLongitudeLessThanCurrent && pseudoNodeLongitudeIncreasing)? true : false;
+
+		// 	const pseudoNodeLongitudeBetweenPointsDecreasing = (previousLongitudeGreaterThanCurrent && pseudoNodeLongitudeDecreasing)? true : false;
+
+
+		// 	const pseudoNodeLongitudeBetweenPoints = (pseudoNodeLongitudeIncreasing || pseudoNodeLongitudeDecreasing)? true : false;
+
+
+
+
+
+		// 	// const pseudoNodeLatitudeIncreasing = (previousLatitude < pseudoNodeLatitude && pseudoNodeLatitude < currentLatitude)? true : false;
+		// 	// const pseudoNodeLatitudeDecreasing = (previousLatitude > pseudoNodeLatitude && pseudoNodeLatitude > currentLatitude)? true : false;
+
+		// 	const pseudoNodeLatitudeIncreasing = (previousLatitude < pseudoNodeLatitude && pseudoNodeLatitude < currentCoordinates)? true : false;
+		// 	const pseudoNodeLatitudeDecreasing = (previousLatitude > pseudoNodeLatitude && pseudoNodeLatitude > currentCoordinates)? true : false;
+
+
+
+		// 	const pseudoNodeLatitudeBetweenPointsIncreasing = (previousLatitudeLessThanCurrent && pseudoNodeLatitudeIncreasing)? true : false;
+
+		// 	const pseudoNodeLatitudeBetweenPointsDecreasing = (previousLatitudeGreaterThanCurrent && pseudoNodeLatitudeDecreasing)? true : false;
+
+
+
+		// 	const pseudoNodeLatitudeBetweenPoints = (pseudoNodeLatitudeIncreasing || pseudoNodeLatitudeDecreasing)? true : false;
+
+		// 	if(pseudoNodeLongitudeBetweenPoints && pseudoNodeLatitudeBetweenPoints) {
+		// 		console.log("Current index: ", i - 1);
+		// 		console.log("Pseudo Node insertion index found: ", currentCoordinates);
+
+		// 		const laneSlice = (isStartLane)? originalCoordinates.slice(i) : originalCoordinates.slice(0, i);
+
+		// 		if(isStartLane) {
+		// 			laneSlice.unshift(pseudoNodeCoordinates);
+		// 		} else {
+		// 			laneSlice.push(pseudoNodeCoordinates);
+		// 		}
 				
 
-				console.log("laneSlice: ",  laneSlice);
-				return laneSlice;
-			}
-		}
-		return [];
+		// 		console.log("laneSlice: ",  laneSlice);
+		// 		return laneSlice;
+		// 	}
+		// }
+		// return [];
+
+
+
 	}
 };
 

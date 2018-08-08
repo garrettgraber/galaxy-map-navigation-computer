@@ -18,18 +18,39 @@ async function generateStarPathCollection(PathCollectionOptions, db) {
   const hyperspaceRoutesLength = PathCollectionOptions.hyperspaceRoutesLength;
   const hyperspaceRoutesNodes = PathCollectionOptions.hyperspaceRoutesNodes;
 
+
+  const PseudoStartNode = PathCollectionOptions.PseudoStartNode;
+  const PseudoStartLane = PathCollectionOptions.PseudoStartLane;
+  const PseudoEndNode = PathCollectionOptions.PseudoEndNode;
+  const PseudoEndLane = PathCollectionOptions.PseudoEndLane;
+
+
   const lanesArray = await Promise.map([...hyperspaceLanesSet], function(laneId) {
-  	return db.readRelationshipAsync(laneId);
+    if(Math.abs(laneId) < 2000) {
+      return db.readRelationshipAsync(laneId);
+    } else {
+      console.log("Lane is artifical: ", laneId);
+    }
   });
 
   const nodesArray = await Promise.map([...hyperspaceNodesSet], function(nodeId) {
-    return db.readNodeAsync(nodeId);
+    if(Math.abs(nodeId) < 2000) {
+      return db.readNodeAsync(nodeId);
+    } else {
+      console.log("Node is artifical: ", nodeId);
+    }
   });
 
-  console.log("Lane Array length: ", lanesArray.length);
-  console.log("Nodes Array length: ", nodesArray.length);
-  const hyperspaceLaneData = lanesArray;
-  const hyperspaceNodeData = nodesArray;
+  // console.log("lanesArray: ", lanesArray);
+  // console.log("nodesArray: ", nodesArray);
+
+  const hyperspaceLaneData = lanesArray.filter(lane => lane !== undefined);
+  const hyperspaceNodeData = nodesArray.filter(node => node !== undefined);
+
+
+  console.log("hyperspaceLaneData length: ", hyperspaceLaneData.length);
+  console.log("hyperspaceNodeData length: ", hyperspaceNodeData.length);
+
   const hyperspaceLanesArray = _.map(hyperspaceLaneData, function(Lane) {
     return new HyperSpaceLane(
       Lane.name,
@@ -49,6 +70,21 @@ async function generateStarPathCollection(PathCollectionOptions, db) {
   const hyperspaceNodesArray = _.map(hyperspaceNodeData, function(Node) {
     return new HyperSpaceNode(_.merge({nodeId: Node._id}, Node));
   });
+
+
+  if(!_.isEmpty(PseudoStartNode)) {
+    hyperspaceNodesArray.unshift(PseudoStartNode);
+    hyperspaceLanesArray.unshift(PseudoStartLane);
+  }
+
+  if(!_.isEmpty(PseudoEndNode)) {
+    hyperspaceNodesArray.push(PseudoEndNode);
+    hyperspaceLanesArray.push(PseudoEndLane);
+  }
+
+  console.log("hyperspaceNodesArray: ", hyperspaceNodesArray.length);
+  console.log("hyperspaceLanesArray: ", hyperspaceLanesArray.length);
+
   const StarPathCollection = new HyperSpacePathCollection(
     start,
     end,
@@ -61,6 +97,11 @@ async function generateStarPathCollection(PathCollectionOptions, db) {
   StarPathCollection.generatePaths();
   const Path = StarPathCollection.paths[0];
   if(Path) {
+
+    // console.log("Path: ", Path);
+
+    // console.log("StarPathCollection.lanes: ", StarPathCollection.lanes);
+
     const PathLanes = Path.createArrayOfHyperspaceLanes(StarPathCollection.lanes);
     const PathNodes = Path.createArrayOfHyperspaceNodes(StarPathCollection.nodes);
     StarPathCollection.linkHyperspacePaths();

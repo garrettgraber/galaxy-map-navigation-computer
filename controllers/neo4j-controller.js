@@ -349,110 +349,91 @@ async function findShortestHyperspacePath(JumpData) {
     const SearchData = await http.post(pathUrl, PostData);
     const lanes = _.map(SearchData.relationships, parseUriForIds);
     const nodes = _.map(SearchData.nodes, parseUriForIds);
-    const start = parseUriForIds(SearchData.start);
-    const end = parseUriForIds(SearchData.end);
+    let start = parseUriForIds(SearchData.start);
+    let end = parseUriForIds(SearchData.end);
+    let jumpDistance = SearchData.weight;
 
-    // console.log("SearchData: ", SearchData);
+
+    // const SearchDataResult = (interiorStartNodeId !== interiorEndNodeId)? await getShortesPath({
+    //   exteriorEndNodeId: exteriorEndNodeId,
+    //   exteriorStartNodeId: exteriorStartNodeId
+    // }) : {
+    //   lanes: [],
+    //   nodes: [],
+    //   start: null,
+    //   end: null,
+    //   jumpDistance: 0
+    // };
+
+
+    // const PostJumpDistanceData = {
+    //   "to" : neo4jAccessUrl + '/db/data/node/' + interiorStartNodeId,
+    //   "cost_property" : "length",
+    //   "relationships" : {
+    //     "type" : "HYPERSPACE_LANE"
+    //   },
+    //   "algorithm" : "dijkstra"
+    // };
+
+    // const pathJumpDistanceUrl = neo4jAccessUrl + '/db/data/node/'  + interiorEndNodeId + pathUrlEnd;
+    // const InteriorJumpData = await http.post(pathJumpDistanceUrl, PostJumpDistanceData);
+
+    // let jumpDistance = InteriorJumpData.weight;
+
+
+    const PseudoStartData =  (startIsPseudoNode)? await getStartPseudoNodeAndLocation(JumpData.startNodeId, nodes, lanes, interiorStartNodeId, exteriorStartNodeId) : {PseudoNode: {}, PseudoLane: {}, laneSubtractionValue: 0.0};
 
     if(startIsPseudoNode) {
-      const startPseudoNode = JumpData.startNodeId;
-      console.log("startPseudoNode: ",  startPseudoNode);
-
-      const startNodeId = nodes[0];
-      const secondNodeId = nodes[1];
-
-      const nodeLocationHash = startPseudoNode.split('-')[3];
-
-      const PseudoNodeLocation = Geohash.decode(nodeLocationHash);
-
-      console.log("Start PseudoNodeLocation: ", PseudoNodeLocation);
-
-      const startLaneId = lanes[0];
-
-      const StartLaneFound = await findLaneByIdAsync(startLaneId);
-
-      console.log("Start Lane Found: ", StartLaneFound);
-
-      const PseudoStartNode = new HyperSpacePseudoNode({
-        lng: PseudoNodeLocation.lon,
-        lat: PseudoNodeLocation.lat,
-        hyperspaceLanes: StartLaneFound.name,
-        system : startPseudoNode,
-      });
-
-      console.log("PseudoStartNode: ", PseudoStartNode);
-
-      const PseudoStartLane = new HyperSpacePseudoLane({
-        OriginalLane: StartLaneFound,
-        PseudoNode: PseudoStartNode,
-        interiorNodeId: interiorStartNodeId,
-        exteriorNodeId: exteriorStartNodeId,
-        isStartLane: true,
-        isEndLane: false
-      });
-
-      console.log("PseudoStartLane: ", PseudoStartLane);
+      jumpDistance -= PseudoStartData.laneSubtractionValue;
+      start = PseudoStartData.PseudoNode.nodeId;
 
 
+      // nodes.unshift(PseudoStartData.PseudoNode.nodeId);
+      // lanes.unshift(PseudoStartData.PseudoLane._id);
+      lanes.shift();
+      nodes.shift();
     }
+
+
+    // console.log("PseudoStartData: ", PseudoStartData);
+
+    const PseudoEndData =  (endIsPseudoNode)? await getEndPseudoNodeAndLocation(JumpData.endNodeId, nodes, lanes, interiorEndNodeId, exteriorEndNodeId) : {PseudoNode: {}, PseudoLane: {}};
+
 
     if(endIsPseudoNode) {
-      const endPseudoNode = JumpData.endNodeId;
-      console.log("endPseudoNode: ", endPseudoNode);
-      const endNodeId = nodes[nodes.length - 1];
-      const nextToLastId = nodes[nodes.length - 2];
+
+      const pseudoLaneLength = PseudoEndData.PseudoLane.length;
+
+      jumpDistance -= PseudoEndData.laneSubtractionValue;
+      end = PseudoEndData.PseudoNode.nodeId;
+
+      lanes.pop();
+      nodes.pop();
 
 
-      const nodeLocationHash = endPseudoNode.split('-')[3];
-
-      const PseudoNodeLocation = Geohash.decode(nodeLocationHash);
-
-      console.log("End PseudoNodeLocation: ", PseudoNodeLocation);
-
-
-      const endLaneId = lanes[lanes.length - 1];
-
-      const EndLaneFound = await findLaneByIdAsync(endLaneId);
-
-      console.log("End Lane Found: ", EndLaneFound);
-
-
-      const PseudoEndNode = new HyperSpacePseudoNode({
-        lng: PseudoNodeLocation.lon,
-        lat: PseudoNodeLocation.lat,
-        hyperspaceLanes: EndLaneFound.name,
-        system : endPseudoNode,
-      });
-
-      console.log("PseudoEndNode: ", PseudoEndNode);
-
-
-      const PseudoEndLane = new HyperSpacePseudoLane({
-        OriginalLane: EndLaneFound,
-        PseudoNode: PseudoEndNode,
-        interiorNodeId: interiorEndNodeId,
-        exteriorNodeId: exteriorEndNodeId,
-        isStartLane: false,
-        isEndLane: true
-      });
-
-      console.log("PseudoEndLane: ", PseudoEndLane);
-
-
+      // nodes.push(PseudoEndData.PseudoNode.nodeId);
+      // lanes.push(PseudoEndData.PseudoLane._id);
     }
+
+    // console.log("PseudoEndData: ", PseudoEndData);
 
     console.log("start: ", start);
     console.log("end: ", end);
     console.log("lanes: ", lanes);
     console.log("nodes: ", nodes);
 
-    const CurrentHyperSpaceResultsStructure = new HyperSpaceResultsStructure(
-      start,
-      end,
-      lanes,
-      nodes,
-      SearchData.weight
-    );
+
+    const CurrentHyperSpaceResultsStructure = new HyperSpaceResultsStructure({
+      start : start,
+      end : end,
+      lanes : lanes,
+      nodes : nodes,
+      distance : jumpDistance,
+      StartPseudoNode : PseudoStartData.PseudoNode,
+      StartPseudoLane : PseudoStartData.PseudoLane,
+      EndPseudoNode : PseudoEndData.PseudoNode,
+      EndPseudoLane : PseudoEndData.PseudoLane
+    });
 
     CurrentHyperSpaceResultsStructure.hyperspaceSingleJump();
     const StarPathCreated = await CurrentHyperSpaceResultsStructure.generateStarPathCollection(db);
@@ -461,7 +442,7 @@ async function findShortestHyperspacePath(JumpData) {
     // console.log("StarPathCreated: ", StarPathCreated);
 
 
-    console.log("StarPathCreated: ", Object.keys(StarPathCreated));
+    // console.log("StarPathCreated: ", Object.keys(StarPathCreated));
 
     console.timeEnd('Shortest Jump Time');
     return StarPathCreated;
@@ -471,6 +452,215 @@ async function findShortestHyperspacePath(JumpData) {
   }
 };
 
+
+
+async function getShortesPath(Options) {
+  try {
+
+    const exteriorEndNodeId = Options.exteriorEndNodeId;
+    const exteriorStartNodeId = Options.exteriorStartNodeId;
+
+
+    const pathUrlEnd = '/path';
+    const PostData = {
+      "to" : neo4jAccessUrl + '/db/data/node/' + exteriorEndNodeId,
+      "cost_property" : "length",
+      "relationships" : {
+        "type" : "HYPERSPACE_LANE"
+      },
+      "algorithm" : "dijkstra"
+    };
+
+    const pathUrl = neo4jAccessUrl + '/db/data/node/'  + exteriorStartNodeId + pathUrlEnd;
+    const SearchData = await http.post(pathUrl, PostData);
+    const lanes = _.map(SearchData.relationships, parseUriForIds);
+    const nodes = _.map(SearchData.nodes, parseUriForIds);
+    const start = parseUriForIds(SearchData.start);
+    const end = parseUriForIds(SearchData.end);
+
+    return {
+      lanes: lanes,
+      nodes: nodes,
+      start: start,
+      end: end,
+      jumpDistance: SearchData.weight
+    };
+  } catch(err) {
+    console.log("Error getting Shortest Path: ", err);
+  }
+};
+
+
+async function getStartPseudoNodeAndLocation(startPseudoNodeId, nodes, lanes, interiorNodeId, exteriorNodeId){
+  try {
+
+    // console.log("startPseudoNodeId: ",  startPseudoNodeId);
+
+    const startNodeId = nodes[0];
+    const secondNodeId = nodes[1];
+
+    const nodeLocationHash = startPseudoNodeId.split('-')[3];
+
+    const PseudoNodeLocation = Geohash.decode(nodeLocationHash);
+
+    // console.log("Start PseudoNodeLocation: ", PseudoNodeLocation);
+
+    const startLaneId = lanes[0];
+
+    const StartLaneFound = await findLaneByIdAsync(startLaneId);
+
+    console.log("Start Lane Found: ", StartLaneFound);
+
+    const PseudoStartNode = new HyperSpacePseudoNode({
+      lng: PseudoNodeLocation.lon,
+      lat: PseudoNodeLocation.lat,
+      hyperspaceLanes: StartLaneFound.name,
+      system : startPseudoNodeId,
+    });
+
+    console.log("PseudoStartNode: ", PseudoStartNode);
+
+    const PseudoStartLane = new HyperSpacePseudoLane({
+      OriginalLane: StartLaneFound,
+      PseudoNode: PseudoStartNode,
+      interiorNodeId: interiorNodeId,
+      exteriorNodeId: exteriorNodeId,
+      isStartLane: true,
+      isEndLane: false
+    });
+
+    console.log("PseudoStartLane: ", PseudoStartLane);
+
+    const laneStartLocation = PseudoStartLane.startCoordsLngLat;
+    const laneStartGeoHash = PseudoStartLane.start.split('-')[3];
+    const LaneStartLatLng = Geohash.decode(laneStartGeoHash);
+
+    const laneStartLngMatchesNode = (laneStartLocation[0] === PseudoNodeLocation.lon)? true : false;
+    const laneStartLatMatchesNode = (laneStartLocation[1] === PseudoNodeLocation.lat)? true : false;
+    const laneLocationMatchesNode = (laneStartLngMatchesNode && laneStartLatMatchesNode)? true : false;
+
+    const laneStartLngHashMatchesNode = (PseudoNodeLocation.lon === LaneStartLatLng.lon)? true : false;
+    const laneStartLatHashMatchesNode = (PseudoNodeLocation.lat === LaneStartLatLng.lat)? true : false;
+    const laneHashMatchesNode = (laneStartLngHashMatchesNode && laneStartLatHashMatchesNode)? true : false;
+
+    if(laneLocationMatchesNode && laneHashMatchesNode){
+
+
+      console.log("\nPseudo Lane Start Matches Pseudo Node Location and Lane Hash: ", PseudoNodeLocation);
+      console.log("\n");
+    } else {
+      console.log("Pseudo Lane Start: ", laneStartLocation);
+      console.log("Does not match Pseudo Node Location: ", LaneStartLatLng);
+      console.log("PseudoNodeLocation: ", PseudoNodeLocation);
+    }
+
+    const laneSubtractionValue = StartLaneFound.length - PseudoStartLane.length;
+
+    return {
+      PseudoNode: PseudoStartNode,
+      PseudoLane: PseudoStartLane,
+      laneSubtractionValue: laneSubtractionValue
+    };
+
+
+
+  } catch(err) {
+
+    console.log("Error getting Pseudo Node Location and Hyperspace Lane: ", err);
+  }
+
+};
+
+
+async function getEndPseudoNodeAndLocation(endPseudoNodeId, nodes, lanes, interiorNodeId, exteriorNodeId){
+  try {
+
+    // console.log("endPseudoNodeId: ", endPseudoNodeId);
+    const endNodeId = nodes[nodes.length - 1];
+    const nextToLastId = nodes[nodes.length - 2];
+
+
+    const nodeLocationHash = endPseudoNodeId.split('-')[3];
+
+    const PseudoNodeLocation = Geohash.decode(nodeLocationHash);
+
+    // console.log("End PseudoNodeLocation: ", PseudoNodeLocation);
+
+
+    const endLaneId = lanes[lanes.length - 1];
+
+    const EndLaneFound = await findLaneByIdAsync(endLaneId);
+
+    console.log("End Lane Found: ", EndLaneFound);
+
+
+    const PseudoEndNode = new HyperSpacePseudoNode({
+      lng: PseudoNodeLocation.lon,
+      lat: PseudoNodeLocation.lat,
+      hyperspaceLanes: EndLaneFound.name,
+      system : endPseudoNodeId,
+    });
+
+    console.log("PseudoEndNode: ", PseudoEndNode);
+
+
+    const PseudoEndLane = new HyperSpacePseudoLane({
+      OriginalLane: EndLaneFound,
+      PseudoNode: PseudoEndNode,
+      interiorNodeId: interiorNodeId,
+      exteriorNodeId: exteriorNodeId,
+      isStartLane: false,
+      isEndLane: true
+    });
+
+    console.log("PseudoEndLane: ", PseudoEndLane);
+
+
+    const laneEndLocation = PseudoEndLane.endCoordsLngLat;
+    const laneEndGeoHash = PseudoEndLane.end.split('-')[3];
+    const LaneEndLatLng = Geohash.decode(laneEndGeoHash);
+
+    // console.log("laneStartLocation: ", laneStartLocation);
+    // console.log("laneStartGeoHash: ", laneStartGeoHash);
+    // console.log("LaneStartLatLng: ", LaneStartLatLng);
+
+    const laneEndLngMatchesNode = (laneEndLocation[0] === PseudoNodeLocation.lon)? true : false;
+    const laneEndLatMatchesNode = (laneEndLocation[1] === PseudoNodeLocation.lat)? true : false;
+    const laneLocationMatchesNode = (laneEndLngMatchesNode && laneEndLatMatchesNode)? true : false;
+
+    const laneEndLngHashMatchesNode = (PseudoNodeLocation.lon === LaneEndLatLng.lon)? true : false;
+    const laneEndLatHashMatchesNode = (PseudoNodeLocation.lat === LaneEndLatLng.lat)? true : false;
+    const laneHashMatchesNode = (laneEndLngHashMatchesNode && laneEndLatHashMatchesNode)? true : false;
+
+
+
+
+    if(laneLocationMatchesNode && laneHashMatchesNode){
+
+      console.log("\nPseudo Lane End Matches Pseudo Node Location and Lane Hash: ", PseudoNodeLocation);
+      console.log("\n");
+
+
+    } else {
+      console.log("Pseudo Lane End: ", laneEndLocation);
+      console.log("Does not match Pseudo Node Location: ", LaneEndLatLng);
+      console.log("PseudoNodeLocation: ", PseudoNodeLocation);
+    }
+
+    const laneSubtractionValue = EndLaneFound.length - PseudoEndLane.length;
+
+
+    return {
+      PseudoNode: PseudoEndNode,
+      PseudoLane: PseudoEndLane,
+      laneSubtractionValue: laneSubtractionValue
+    };
+
+  } catch(err) {
+    console.log("Error getting Pseudo Node Location and Hyperspace Lane: ", err);
+  }
+
+};
 
 
 async function getExteriorJumpNodeIds(nodeOneId, nodeTwoId) {
