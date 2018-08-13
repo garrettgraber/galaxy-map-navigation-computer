@@ -66,7 +66,7 @@ const PlanetSchema = new Schema({
     LngLat         : { type : Array , "default" : [] },
     lng            : { type : Number , "default" : null },
     lat            : { type : Number , "default" : null },
-    zoom		   : Number,
+    zoom		   		 : Number,
     link           : String
 });
 PlanetSchema.set('autoIndex', true);
@@ -118,7 +118,8 @@ const HyperLaneSchema = new Schema({
 	endNodeId: { type : Object, "default" : {} },
 	coordinates: [
 		[Number, Number]
-	]
+	],
+	laneId: Number
 });
 HyperLaneSchema.set('autoIndex', true);
 const HyperLaneModel = mongoose.model('HyperLaneModel', HyperLaneSchema);
@@ -248,9 +249,17 @@ const findPlanetAndUpdate = async (SearchItem, UpdateItem) => {
 	}
 };
 
+const findHyperspaceLaneAndUpdate = async (SearchItem, UpdateItem) => {
+	try {
+		return await HyperLaneModel.findOneAndUpdate(SearchItem, UpdateItem, {new: true}).exec();
+	} catch(err) {
+		console.log("error uploading hyperspace: ", error);
+	}
+};
+
 const createHyperspaceLane = async (HyperSpaceLaneCurrent) => {
 	try {
-		return await PlanetModel.HyperLaneModel.create(HyperSpaceLaneCurrent).exec();
+		return await HyperLaneModel.create(HyperSpaceLaneCurrent).exec();
 	} catch(err) {
 		console.log("error uploading hyperspace: ", error);
 	}
@@ -362,6 +371,7 @@ module.exports = {
 	searchCoordinate: searchCoordinate,
 	findPlanetAndUpdate: findPlanetAndUpdate,
 	findOnePlanet: findOnePlanet,
+	findHyperspaceLaneAndUpdate: findHyperspaceLaneAndUpdate,
 	totalPlanetsHasLocation: totalPlanetsHasLocation,
 	createPlanet: createPlanet,
 	createHyperspaceLane: createHyperspaceLane,

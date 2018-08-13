@@ -84,8 +84,8 @@ class HyperSpacePseudoLane {
 		} else {
 			console.log("coordinates are not an Array: ", coordinates);
 			let jsonJumpCoordinates = JSON.parse("[" + coordinates + "]");
-			console.log("jsonJumpCoordinates: ", jsonJumpCoordinates[0]);
-			console.log("coordinates type: ", typeof jsonJumpCoordinates[0]);
+			// console.log("jsonJumpCoordinates: ", jsonJumpCoordinates[0]);
+			// console.log("coordinates type: ", typeof jsonJumpCoordinates[0]);
 			return jsonJumpCoordinates[0];			
 		}
 	}
@@ -97,7 +97,7 @@ class HyperSpacePseudoLane {
 	insertPseudoNodeCoordinates(pseudoNodeCoordinates, originalCoordinates, pseudoNodeCutIndex, laneIsReversed, isStartLane) {
 
 		console.log("insertPseudoNodeCoordinates has fired: ", pseudoNodeCoordinates);
-		console.log("originalCoordinates: ",  originalCoordinates);
+		// console.log("originalCoordinates: ",  originalCoordinates);
 
 		const pseudoNodeLongitude = pseudoNodeCoordinates[0];
 		const pseudoNodeLatitude = pseudoNodeCoordinates[1];
