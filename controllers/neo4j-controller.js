@@ -38,7 +38,6 @@ const nodesNotUploadedArray = [];
 console.log("NODE_ENV: ", process.env.NODE_ENV);
 const isDeveloping = process.env.NODE_ENV !== 'production';
 const isProduction = process.env.NODE_ENV === 'production';
-let graphDatabaseHostname = DatabaseLinks.graph.hostname;
 
 if(DatabaseLinks.hasOwnProperty('graph') && isDeveloping) {
   neo4jHostname = DatabaseLinks.graph.hostname;
@@ -47,8 +46,8 @@ if(DatabaseLinks.hasOwnProperty('graph') && isDeveloping) {
   neo4jHostname = '172.31.75.37';
 }
 
-const neo4jUrl = "http://neo4j:neo4j@" + graphDatabaseHostname + ":7474";
-const neo4jAccessUrl = "http://" + graphDatabaseHostname + ":7474";
+const neo4jUrl = "http://neo4j:neo4j@" + neo4jHostname + ":7474";
+const neo4jAccessUrl = "http://" + neo4jHostname + ":7474";
 
 db = new nodeNeo4j(neo4jUrl);
 Promise.promisifyAll(db);
