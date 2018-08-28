@@ -42,8 +42,8 @@ const isProduction = process.env.NODE_ENV === 'production';
 if(DatabaseLinks.hasOwnProperty('graph') && isDeveloping) {
   neo4jHostname = DatabaseLinks.graph.hostname;
 } else {
-  // neo4jHostname = '0.0.0.0';
-  neo4jHostname = '172.31.75.37';
+  neo4jHostname = '0.0.0.0';
+  // neo4jHostname = '172.31.75.37';
 }
 
 const neo4jUrl = "http://neo4j:neo4j@" + neo4jHostname + ":7474";
