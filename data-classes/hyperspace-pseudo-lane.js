@@ -21,7 +21,9 @@ class HyperSpacePseudoLane {
 		const pseudoNodeCutIndex = parseInt(PseudoNode.system.split('-')[4]);
 
 		console.log("pseudoNodeCutIndex: ", pseudoNodeCutIndex);
-		const pseudoNodeLocation = [PseudoNode.lng, PseudoNode.lat];
+		const nodeLatitude = numberToEightSignificantFigures(PseudoNode.lat);
+		const nodeLongitude = numberToEightSignificantFigures(PseudoNode.lng);
+		const pseudoNodeLocation = [nodeLongitude, nodeLatitude];
 		const interiorNodeId = Options.interiorNodeId;
 		const exteriorNodeId = Options.exteriorNodeId;
 
@@ -99,19 +101,30 @@ class HyperSpacePseudoLane {
 		console.log("insertPseudoNodeCoordinates has fired: ", pseudoNodeCoordinates);
 		// console.log("originalCoordinates: ",  originalCoordinates);
 
+
 		const pseudoNodeLongitude = pseudoNodeCoordinates[0];
 		const pseudoNodeLatitude = pseudoNodeCoordinates[1];
+
+		const pseudoNodeIndex = checkIfPseudoNodeIsCoordinate({
+			lat: pseudoNodeLatitude, lng: pseudoNodeLongitude
+		}, originalCoordinates);
+
+		console.log("pseudoNodeIndex: ", pseudoNodeIndex);
+		console.log("pseudoNodeCutIndex: ", pseudoNodeCutIndex);
+
 
 		const slicedIndexUsed = (laneIsReversed)? originalCoordinates.length - pseudoNodeCutIndex - 1 : pseudoNodeCutIndex;
 
 
+		const nodeCutIndex = (pseudoNodeIndex === null)? pseudoNodeCutIndex : pseudoNodeIndex;
+
 		const laneSlice = (isStartLane)?
 			(laneIsReversed)?
-				originalCoordinates.slice(0, pseudoNodeCutIndex).reverse() : // reversed start lane
-				originalCoordinates.slice(pseudoNodeCutIndex + 1): // regular start lane
+				originalCoordinates.slice(0, nodeCutIndex).reverse() : // reversed start lane
+				originalCoordinates.slice(nodeCutIndex + 1): // regular start lane
 			(laneIsReversed)?
-				originalCoordinates.slice(pseudoNodeCutIndex + 2).reverse() : // reversed end lane
-				originalCoordinates.slice(0, pseudoNodeCutIndex) // regular end lane
+				originalCoordinates.slice(nodeCutIndex + 2).reverse() : // reversed end lane
+				originalCoordinates.slice(0, nodeCutIndex) // regular end lane
 		;
 
 		if(isStartLane) {
@@ -203,6 +216,31 @@ class HyperSpacePseudoLane {
 
 	}
 };
+
+
+function checkIfPseudoNodeIsCoordinate(PseduoNodeLoction, coordinatesArray) {
+	const pseudoNodeLatitude = numberToEightSignificantFigures(PseduoNodeLoction.lat);
+	const pseudoNodeLongitude = numberToEightSignificantFigures(PseduoNodeLoction.lng);
+
+	for(let i=0; i < coordinatesArray.length; i++) {
+		const currentCoordinate = coordinatesArray[i];
+		const currentLatitude = currentCoordinate[1];
+		const currentLongitude = currentCoordinate[0];
+		const pseudoNodeLatitudeMatchesCoordinate = currentLatitude === pseudoNodeLatitude;
+		const pseudoNodeLongitudeMatchesCoordinate = currentLongitude === pseudoNodeLongitude;
+		if(pseudoNodeLongitudeMatchesCoordinate && pseudoNodeLatitudeMatchesCoordinate) {
+			// return i - 1;
+			return i;
+		}
+	}
+	return null;
+}
+
+
+function numberToEightSignificantFigures(floatingCoordinate) {
+	return parseFloat(Number.parseFloat(floatingCoordinate).toPrecision(8));
+}
+
 
 
 function getGalacticCoordinatesArray(coordinatesArray) {
