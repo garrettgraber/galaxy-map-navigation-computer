@@ -439,7 +439,7 @@ async function findShortestHyperspacePath(JumpData) {
 
     // console.log("PseudoStartData: ", PseudoStartData);
 
-    const PseudoEndData =  (endIsPseudoNode)? await getEndPseudoNodeAndLocation(JumpData.endNodeId, interiorEndNodeId, exteriorEndNodeId) : {PseudoNode: {}, PseudoLane: {}};
+    const PseudoEndData =  (endIsPseudoNode)? await getEndPseudoNodeAndLocation(JumpData.endNodeId, interiorEndNodeId, exteriorEndNodeId) : {PseudoNode: {}, PseudoLane: {}, laneAdditionValue: 0.0};
 
 
     if(endIsPseudoNode) {

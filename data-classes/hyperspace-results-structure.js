@@ -13,8 +13,6 @@ class HyperSpaceResultsStructure {
 		this.StartPseudoLane = Options.StartPseudoLane;
 		this.EndPseudoNode = Options.EndPseudoNode;
 		this.EndPseudoLane = Options.EndPseudoLane;
-
-
 	}
 
 	totalJumps() { return this.lanes.length }
@@ -32,8 +30,6 @@ class HyperSpaceResultsStructure {
 
 		const hyperspaceLanes = this.lanes;
 		const hyperspaceNodes = this.nodes;
-		
-
 
 		if(!_.isEmpty(this.StartPseudoNode)) {
 			hyperspaceNodes.unshift(this.StartPseudoNode.nodeId);
@@ -45,14 +41,11 @@ class HyperSpaceResultsStructure {
 			hyperspaceLanes.push(this.EndPseudoLane._id);
 		}
 
-
 		let lanesSet = new Set(hyperspaceLanes);
 		let nodesSet = new Set(hyperspaceNodes);
 		hyperspaceLanesSet = new Set([...hyperspaceLanesSet, ...lanesSet]);
 		hyperspaceNodesSet = new Set([...hyperspaceNodesSet, ...nodesSet]);
 		hyperspaceRoutesLength.push(distance);
-
-
 		hyperspaceRoutesNodes.push(hyperspaceNodes);
 		hyperspaceRoutes.push(hyperspaceLanes);
 

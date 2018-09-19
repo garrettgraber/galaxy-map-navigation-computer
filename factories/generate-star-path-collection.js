@@ -166,6 +166,7 @@ async function generateStarPathCollection(PathCollectionOptions, db) {
       console.log("distanceBetweenPointsArray: ", distanceBetweenPointsArray.length);
       console.log("latLngCoordinates: ", latLngCoordinates.length);
       console.log("shipJumpAngles: ", shipJumpAngles.length);
+      console.log("Total nodes: ", StarPathCollection.nodes.length);
 
       StarPathCollection.jumpCoordinates = latLngCoordinates;
       StarPathCollection.jumpDistances = distanceBetweenPointsArray;
