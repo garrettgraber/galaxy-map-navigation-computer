@@ -1,6 +1,6 @@
 #!/bin/bash
 
-./build.sh
+# ./build.sh
 # echo "Deleting "
 docker rm -f navi-computer-node 
 echo "Running navi-computer-node.."
